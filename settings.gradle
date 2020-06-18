@@ -1,3 +1,5 @@
 rootProject.name = 'Pi_MP3'
 include 'gui'
 include 'core'
+include 'api'
+
