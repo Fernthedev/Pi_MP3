@@ -6,6 +6,7 @@
 
 
 .idea/sonarlint
+banned.json
 
 ## User settings
 xcuserdata/
