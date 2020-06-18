@@ -1,5 +1,6 @@
 package com.github.fernthedev.pi_mp3.core;
 
+import com.github.fernthedev.lightchat.server.Server;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminalSettings;
 import com.github.fernthedev.pi_mp3.api.ICore;
@@ -53,6 +54,10 @@ public class MP3Server extends ServerTerminal implements ICore {
 
     public static void main(String[] args) {
         new MP3Server(args);
+    }
+
+    public static Server getServer() {
+        return server;
     }
 
 
