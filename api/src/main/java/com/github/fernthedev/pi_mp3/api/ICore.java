@@ -1,6 +1,9 @@
 package com.github.fernthedev.pi_mp3.api;
 
+import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
+
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 
 /**
  * The API for any modules should default to this.
@@ -30,5 +33,11 @@ public interface ICore {
      */
     @Deprecated
     Queue<String> getSongsQueue();
+
+    ExecutorService getExecutorService();
+
+    ModuleHandler getModuleHandler();
+
+    boolean isStarted();
 
 }

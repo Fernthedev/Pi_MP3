@@ -11,9 +11,13 @@ public abstract class Module {
     /**
      * Injected after registered
      */
-    @Setter(value = AccessLevel.MODULE)
+    @Setter(value = AccessLevel.PACKAGE)
     @Getter
-    private String name;
+    private ModuleDescription description;
+
+    public String getName() {
+        return description.getName();
+    }
 
     public void onEnable() {}
 

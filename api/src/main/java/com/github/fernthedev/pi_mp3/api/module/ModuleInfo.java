@@ -9,9 +9,17 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface ModuleInfo {
 
+    String[] authors();
+
+    /**
+     * By default, use the jar's manifest version.
+     */
+    String version() default "";
     String name();
 
     String[] depend() default {};
     String[] softDepend() default {};
+
+    boolean includeInModuleInfoFile() default true;
 
 }

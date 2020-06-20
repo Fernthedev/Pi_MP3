@@ -19,16 +19,21 @@ import java.util.regex.Pattern;
 
 public class ModuleHandler {
 
-    private static final Map<String, ClassLoader> loaders = new HashMap<>();
+    private final Map<String, ClassLoader> loaders = new HashMap<>();
 
-    private static Map<Class<?>, Module> moduleMap = new HashMap<>();
-    private static Map<String, Module> moduleNameMap = new HashMap<>();
-    private static List<Pattern> jarPatterns = List.of(
+    private Map<Class<?>, Module> moduleMap = new HashMap<>();
+    private Map<String, Module> moduleNameMap = new HashMap<>();
+    private List<Pattern> jarPatterns = List.of(
             Pattern.compile(".*\\.jar")
     );
-//    private static final Map<String, Class<?>> classes = new ConcurrentHashMap<>();
+//    private final Map<String, Class<?>> classes = new ConcurrentHashMap<>();
 
-    public static TaskInfoList initializeModules() {
+
+    public Set<Module> getModuleList() {
+        return new HashSet<>(moduleNameMap.values());
+    }
+
+    public TaskInfoList initializeModules() {
         Map<String, Module> loadedModules = new HashMap<>();
 
 
@@ -83,7 +88,7 @@ public class ModuleHandler {
 
         ThreadUtils.runAsync(() -> {
             try {
-                task.runThreads(ThreadUtils.ThreadExecutors.CACHED_THREADS.getExecutorService());
+                task.runThreads(MP3Pi.getInstance().getExecutorService());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 e.printStackTrace();
@@ -102,7 +107,7 @@ public class ModuleHandler {
         return task;
     }
 
-    public static ModuleInfoJSON getModuleDescription(File file) throws ModuleInvalidDescriptionException {
+    public ModuleInfoJSON getModuleDescription(File file) throws ModuleInvalidDescriptionException {
         Validate.notNull(file, "File cannot be null");
 
         JarFile jar = null;
@@ -138,14 +143,29 @@ public class ModuleHandler {
         }
     }
 
-    public static void registerModule(Module module) {
+    public ModuleDescription parseDescription(ModuleInfo moduleInfo, Module module) {
+        String version = moduleInfo.version();
+
+        if (version.isEmpty()) version = module.getClass().getPackage().getImplementationVersion();
+
+        if (version == null) version = "null";
+
+        return new ModuleDescription(moduleInfo.authors(),
+                version,
+                moduleInfo.name(),
+                moduleInfo.depend(),
+                moduleInfo.softDepend()
+        );
+    }
+
+    public void registerModule(Module module) {
         if (moduleMap.containsKey(module.getClass())) {
             throw new ModuleAlreadyRegisteredException("Module " + module.getClass().getName() + " is already registered");
         }
 
         if (module.getClass().isAnnotationPresent(ModuleInfo.class)) {
             ModuleInfo moduleInfo = module.getClass().getAnnotation(ModuleInfo.class);
-            module.setName(moduleInfo.name());
+            module.setDescription(parseDescription(moduleInfo, module));
 
             if (moduleNameMap.containsKey(module.getName())) {
                 throw new ModuleAlreadyRegisteredException("Module " + module.getClass().getName() + "'s  name " + module.getName() + " already taken by " + module.getClass().getName());
@@ -169,7 +189,7 @@ public class ModuleHandler {
         moduleNameMap.put(module.getName(), module);
     }
 
-    public static void unregisterModule(@NonNull Module module) {
+    public void unregisterModule(@NonNull Module module) {
         module.onDisable();
 
         moduleMap.remove(module.getClass());
@@ -191,11 +211,11 @@ public class ModuleHandler {
         }
     }
 
-//    private static void removeClass(@NotNull String name) {
+//    private void removeClass(@NotNull String name) {
 //        Class<?> clazz = classes.remove(name);
 //    }
 
-    public static List<Module> loadModule(final File file, ClassLoader classLoader) throws ModuleException {
+    public List<Module> loadModule(final File file, ClassLoader classLoader) throws ModuleException {
         Validate.notNull(file, "File cannot be null");
 
         if (!file.exists()) {
@@ -221,7 +241,7 @@ public class ModuleHandler {
 
         loader.getModuleList().forEach(module -> {
             loaders.put(module.getName(), loader);
-            ModuleHandler.registerModule(module);
+            registerModule(module);
         });
 
         return loader.getModuleList();
@@ -229,7 +249,7 @@ public class ModuleHandler {
 
 
 
-    public static void scanDirectory(File folder, ClassLoader classLoader) {
+    public void scanDirectory(File folder, ClassLoader classLoader) {
         if (!folder.isDirectory()) throw new IllegalArgumentException("File " + folder.toPath().toString() + " is not a folder");
 
         for (File file : Objects.requireNonNull(

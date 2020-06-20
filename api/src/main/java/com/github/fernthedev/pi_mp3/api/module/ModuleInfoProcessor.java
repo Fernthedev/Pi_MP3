@@ -72,6 +72,8 @@ public class ModuleInfoProcessor extends AbstractProcessor {
 //                if (!Module.class.isAssignableFrom(clazz)) throw new IllegalArgumentException("Class with annotation @" + ModuleInfo.class.getName() + " (" + clazz.getName() + ") must extend " + Module.class.getName());
 
             ModuleInfo moduleInfo = typeElement.getAnnotation(ModuleInfo.class);
+            
+            if (!moduleInfo.includeInModuleInfoFile()) return false;
 
             AnnotationMirror mirrorS = null;
 

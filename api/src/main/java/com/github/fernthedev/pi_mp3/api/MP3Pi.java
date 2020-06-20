@@ -1,5 +1,6 @@
 package com.github.fernthedev.pi_mp3.api;
 
+import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
 import com.google.inject.Injector;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MP3Pi implements ICore {
@@ -53,5 +55,20 @@ public class MP3Pi implements ICore {
     @Override
     public Queue<String> getSongsQueue() {
         return core.getSongsQueue();
+    }
+
+    @Override
+    public ExecutorService getExecutorService() {
+        return core.getExecutorService();
+    }
+
+    @Override
+    public ModuleHandler getModuleHandler() {
+        return core.getModuleHandler();
+    }
+
+    @Override
+    public boolean isStarted() {
+        return core.isStarted();
     }
 }

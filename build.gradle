@@ -101,6 +101,11 @@ allprojects {
         mergeServiceFiles()
     }
 
+    sourceSets {
+        main.java.srcDirs += ['src/main/kotlin']
+        main.kotlin.srcDirs += ['src/main/java']
+    }
+
     build.dependsOn shadowJar
 }
 

@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Contains and manages the core of the application.
@@ -24,8 +25,16 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Getter
     private static Injector injector;
 
+    private static MP3Server instance;
+
+    @Getter
+    private final ModuleHandler moduleHandler;
+    private volatile boolean started;
+
 
     private MP3Server(String[] args, Module... modules) {
+        instance = this;
+        started = false;
         ServerTerminal.init(args,
                 ServerTerminalSettings.builder()
                         .allowChangePassword(false)
@@ -35,15 +44,25 @@ public class MP3Server extends ServerTerminal implements ICore {
                         .build()
         );
 
-        server.start();
+        new Thread(server).start();
+//        server.start();
+
+        try {
+            server.getStartupLock().waitOnLock();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        }
 
         MP3Pi.setCore(this);
         injector = Guice.createInjector(new ServerGuiceModule());
         MP3Pi.setInjector(injector);
 
+        moduleHandler = new ModuleHandler();
+
         if (modules.length > 0) {
             for (Module module : modules) {
-                ModuleHandler.registerModule(module);
+                moduleHandler.registerModule(module);
             }
         }
 
@@ -52,9 +71,10 @@ public class MP3Server extends ServerTerminal implements ICore {
         if (!moduleFolder.exists())
             moduleFolder.mkdir();
 
-        ModuleHandler.scanDirectory(moduleFolder, getClass().getClassLoader());
+        moduleHandler.scanDirectory(moduleFolder, getClass().getClassLoader());
 
-        ModuleHandler.initializeModules().awaitFinish(1);
+        moduleHandler.initializeModules().awaitFinish(1);
+        started = true;
     }
 
     public static void start(String[] args, Module... modules) {
@@ -88,5 +108,19 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public Queue<String> getSongsQueue() {
         return new LinkedList<>(List.of("Some song1", "Some other song", "The best song ever"));
+    }
+
+    @Override
+    public ExecutorService getExecutorService() {
+        return server.getExecutorService();
+    }
+
+    @Override
+    public boolean isStarted() {
+        return started;
+    }
+
+    public static MP3Server getInstance() {
+        return instance;
     }
 }
