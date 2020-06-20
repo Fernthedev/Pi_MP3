@@ -11,8 +11,12 @@ import org.junit.jupiter.api.Test;
 
 public class TestModules {
 
+    private static ModuleHandler moduleHandler;
+
     private static void registerInjector() {
         try {
+            if (moduleHandler == null) moduleHandler = new ModuleHandler();
+
             MP3Pi.setInjector(Guice.createInjector());
         } catch (IllegalStateException ignored) {}
     }
@@ -22,8 +26,8 @@ public class TestModules {
     public void testDependencySameClassFail() {
         registerInjector();
         Assertions.assertThrows(ModuleAlreadyRegisteredException.class, () -> {
-            ModuleHandler.registerModule(new TestModuleClass());
-            ModuleHandler.registerModule(new TestModuleClass());
+            moduleHandler.registerModule(new TestModuleClass());
+            moduleHandler.registerModule(new TestModuleClass());
         });
 
     }
@@ -33,8 +37,8 @@ public class TestModules {
     public void testDependencySameNameFail() {
         registerInjector();
         Assertions.assertThrows(ModuleAlreadyRegisteredException.class, () -> {
-            ModuleHandler.registerModule(new TestModuleClass());
-            ModuleHandler.registerModule(new TestModuleSameNameClass());
+            moduleHandler.registerModule(new TestModuleClass());
+            moduleHandler.registerModule(new TestModuleSameNameClass());
         });
     }
 
@@ -43,8 +47,8 @@ public class TestModules {
     public void testDependencySelfDependFail() {
         registerInjector();
         Assertions.assertThrows(ModuleException.class, () -> {
-            ModuleHandler.registerModule(new TestModuleSelfClass());
-            ModuleHandler.initializeModules();
+            moduleHandler.registerModule(new TestModuleSelfClass());
+            moduleHandler.initializeModules();
         });
     }
 

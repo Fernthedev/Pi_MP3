@@ -4,7 +4,7 @@ import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.pi_mp3.api.module.Module;
 import com.github.fernthedev.pi_mp3.api.module.ModuleInfo;
 
-@ModuleInfo(name = "TestModule4")
+@ModuleInfo(authors = "Fernthedev", name = "TestModule4")
 public class TestModuleClass4 extends Module {
 
     @Override
