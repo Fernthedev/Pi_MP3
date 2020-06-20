@@ -1,9 +1,7 @@
 package com.github.fernthedev.pi_mp3;
 
-import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.pi_mp3.core.MP3Server;
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
@@ -25,25 +23,21 @@ public class HelloFX extends Application {
 
         stage.setScene(scene);
         stage.show();
-        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent event) {
-                if (event.getEventType() == WindowEvent.WINDOW_CLOSE_REQUEST) {
-                    MP3Server.getServer().shutdownServer();
-                    System.exit(0);
-                }
+        stage.setOnCloseRequest(event -> {
+            if (event.getEventType() == WindowEvent.WINDOW_CLOSE_REQUEST) {
+                MP3Server.getServer().shutdownServer();
+                System.exit(0);
             }
         });
     }
 
-    public static void main(String[] args) {
-        // TODO: Remove after debugging
-        MP3Server.debug(args, new GUIModule());
-        StaticHandler.setDebug(true);
-
-
-
+    public static void launchWindow() {
         launch();
     }
+
+    public static void main(String[] args) {
+        MP3Server.start(args, new GUIModule());
+    }
+
 
 }

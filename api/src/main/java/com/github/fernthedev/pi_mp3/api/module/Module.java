@@ -14,4 +14,8 @@ public abstract class Module {
     @Setter(value = AccessLevel.MODULE)
     @Getter
     private String name;
+
+    public void onEnable() {}
+
+    public void onDisable() {}
 }

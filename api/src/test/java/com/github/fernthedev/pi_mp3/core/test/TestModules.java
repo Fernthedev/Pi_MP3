@@ -2,6 +2,7 @@ package com.github.fernthedev.pi_mp3.core.test;
 
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.exceptions.ModuleAlreadyRegisteredException;
+import com.github.fernthedev.pi_mp3.api.exceptions.ModuleException;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
 import com.google.inject.Guice;
 import org.junit.jupiter.api.Assertions;
@@ -36,4 +37,16 @@ public class TestModules {
             ModuleHandler.registerModule(new TestModuleSameNameClass());
         });
     }
+
+    @DisplayName("Same self dependency module registration exception")
+    @Test
+    public void testDependencySelfDependFail() {
+        registerInjector();
+        Assertions.assertThrows(ModuleException.class, () -> {
+            ModuleHandler.registerModule(new TestModuleSelfClass());
+            ModuleHandler.initializeModules();
+        });
+    }
+
+
 }

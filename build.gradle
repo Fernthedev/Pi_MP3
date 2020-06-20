@@ -98,6 +98,7 @@ allprojects {
 
     shadowJar {
         minimize()
+        mergeServiceFiles()
     }
 
     build.dependsOn shadowJar
@@ -107,6 +108,13 @@ allprojects {
 
 configure(subprojects.findAll {it.name != 'core' && it.name != 'api'}) {
     dependencies {
-        implementation project(':core')
+        implementation ("com.squareup.okio:okio:2.4.3")
+        annotationProcessor (project(':api')) {
+            exclude group: 'com.squareup.okio', module: 'okio'
+        }
+        compileOnly project(':api')
+        compileOnly project(':core')
+
     }
 }
+

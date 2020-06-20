@@ -11,6 +11,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import lombok.Getter;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -30,6 +31,7 @@ public class MP3Server extends ServerTerminal implements ICore {
                         .allowChangePassword(false)
                         .allowTermPackets(false)
                         .serverSettings(new MP3ServerSettings())
+                        .launchConsoleWhenNull(false)
                         .build()
         );
 
@@ -45,10 +47,17 @@ public class MP3Server extends ServerTerminal implements ICore {
             }
         }
 
-        ModuleHandler.initializeModules();
+        File moduleFolder = new File("./modules");
+
+        if (!moduleFolder.exists())
+            moduleFolder.mkdir();
+
+        ModuleHandler.scanDirectory(moduleFolder, getClass().getClassLoader());
+
+        ModuleHandler.initializeModules().awaitFinish(1);
     }
 
-    public static void debug(String[] args, Module... modules) {
+    public static void start(String[] args, Module... modules) {
         new MP3Server(args, modules);
     }
 
@@ -75,6 +84,7 @@ public class MP3Server extends ServerTerminal implements ICore {
      * @return
      * @deprecated This will be replaced with it's own class
      */
+    @Deprecated
     @Override
     public Queue<String> getSongsQueue() {
         return new LinkedList<>(List.of("Some song1", "Some other song", "The best song ever"));

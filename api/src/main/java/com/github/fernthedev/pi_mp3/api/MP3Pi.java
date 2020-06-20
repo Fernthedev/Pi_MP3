@@ -49,6 +49,7 @@ public class MP3Pi implements ICore {
      * @return
      * @deprecated This will be replaced with it's own class
      */
+    @Deprecated
     @Override
     public Queue<String> getSongsQueue() {
         return core.getSongsQueue();
