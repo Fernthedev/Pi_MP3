@@ -19,8 +19,8 @@ dependencies {
     compileOnly 'com.github.Fernthedev.light-chat:server:1.6.0' // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
     compileOnly 'com.github.Fernthedev.light-chat:terminal-server:1.0.0-1.6.0' // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
 
-    implementation project(':api') // Remove for production
-    implementation project(':core') // Remove for production
+    implementation project(':api')
+    implementation project(':core')
 
     runtimeOnly "org.openjfx:javafx-graphics:$javafx.version:win"
     runtimeOnly "org.openjfx:javafx-graphics:$javafx.version:linux"
