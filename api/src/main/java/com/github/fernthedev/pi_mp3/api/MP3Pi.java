@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -45,18 +44,6 @@ public class MP3Pi implements ICore {
         return core;
     }
 
-    /**
-     * Returns the queue of songs
-     *
-     * @return
-     * @deprecated This will be replaced with it's own class
-     */
-    @Deprecated
-    @Override
-    public Queue<String> getSongsQueue() {
-        return core.getSongsQueue();
-    }
-
     @Override
     public ExecutorService getExecutorService() {
         return core.getExecutorService();
@@ -71,4 +58,11 @@ public class MP3Pi implements ICore {
     public boolean isStarted() {
         return core.isStarted();
     }
+
+    @Override
+    public SongManager getSongManager() {
+        return core.getSongManager();
+    }
+
+
 }

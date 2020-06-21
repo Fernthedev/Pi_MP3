@@ -1,14 +1,11 @@
-package com.github.fernthedev.pi_mp3.api.exceptions;
+package com.github.fernthedev.pi_mp3.api.exceptions.module;
 
-import java.security.PrivilegedActionException;
-
-public class ModuleRequirementException extends ModuleException {
-
+public class ModuleAlreadyRegisteredException extends ModuleException {
     /**
      * Constructs an IllegalStateException with no detail message.
      * A detail message is a String that describes this particular exception.
      */
-    public ModuleRequirementException() {
+    public ModuleAlreadyRegisteredException() {
         super();
     }
 
@@ -19,7 +16,7 @@ public class ModuleRequirementException extends ModuleException {
      *
      * @param s the String that contains a detailed message
      */
-    public ModuleRequirementException(String s) {
+    public ModuleAlreadyRegisteredException(String s) {
         super(s);
     }
 
@@ -39,7 +36,7 @@ public class ModuleRequirementException extends ModuleException {
      *                unknown.)
      * @since 1.5
      */
-    public ModuleRequirementException(String message, Throwable cause) {
+    public ModuleAlreadyRegisteredException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -57,7 +54,7 @@ public class ModuleRequirementException extends ModuleException {
      *              unknown.)
      * @since 1.5
      */
-    public ModuleRequirementException(Throwable cause) {
+    public ModuleAlreadyRegisteredException(Throwable cause) {
         super(cause);
     }
 }

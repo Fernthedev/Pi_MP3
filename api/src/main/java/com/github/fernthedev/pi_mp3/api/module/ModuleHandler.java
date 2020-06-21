@@ -5,7 +5,7 @@ import com.github.fernthedev.fernutils.thread.multiple.TaskInfoList;
 import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.exceptions.*;
+import com.github.fernthedev.pi_mp3.api.exceptions.module.*;
 import com.google.gson.Gson;
 import lombok.NonNull;
 import org.apache.commons.lang3.Validate;

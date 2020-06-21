@@ -72,8 +72,7 @@ public class HelloFX extends Application {
         stage.show();
         stage.setOnCloseRequest(event -> {
             if (event.getEventType() == WindowEvent.WINDOW_CLOSE_REQUEST) {
-                MP3Server.getServer().shutdownServer();
-                System.exit(0);
+                close();
             }
         });
     }
@@ -120,10 +119,42 @@ public class HelloFX extends Application {
         }
     }
 
+    private static void close() {
+        try {
+            MP3Server.getServer().shutdownServer();
+        } catch (IllegalStateException ignored) {}
+
+        Platform.exit();
+        System.exit(0);
+
+    }
 
     public static void main(String[] args) {
         HelloFX.args = args;
-        Thread thread = new Thread(() -> MP3Server.start(args, new TestModule()), "ServerThread");
+
+        // Checks if the server is shutdown
+        Thread serverWatchThread = new Thread(() -> {
+            while (MP3Server.getServer().isRunning()) {
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    e.printStackTrace();
+                }
+            }
+
+            close();
+        }, "ServerWatchThread");
+
+        Thread thread = new Thread(() -> {
+            try {
+                MP3Server.start(args, new TestModule());
+                serverWatchThread.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+                close();
+            }
+        }, "ServerThread");
 
         thread.start();
         launch();

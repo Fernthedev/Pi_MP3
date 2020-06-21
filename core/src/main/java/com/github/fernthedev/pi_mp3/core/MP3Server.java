@@ -1,13 +1,19 @@
 package com.github.fernthedev.pi_mp3.core;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.github.fernthedev.lightchat.core.StaticHandler;
+import com.github.fernthedev.lightchat.server.SenderInterface;
 import com.github.fernthedev.lightchat.server.Server;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminalSettings;
+import com.github.fernthedev.lightchat.server.terminal.command.Command;
 import com.github.fernthedev.pi_mp3.api.ICore;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
+import com.github.fernthedev.pi_mp3.api.SongManager;
 import com.github.fernthedev.pi_mp3.api.module.Module;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
+import com.github.fernthedev.pi_mp3.api.songs.Song;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import lombok.Getter;
@@ -20,9 +26,6 @@ import org.lwjgl.system.MemoryStack;
 import java.io.File;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 
 import static org.lwjgl.openal.AL10.*;
@@ -44,6 +47,11 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Getter
     private final ModuleHandler moduleHandler;
     private volatile boolean started;
+
+    @Getter
+    private LibGDXHackApp audioHandler;
+
+    private SongManagerImpl songManager;
 
 
     private MP3Server(String[] args, Module... modules) {
@@ -92,6 +100,34 @@ public class MP3Server extends ServerTerminal implements ICore {
 //        ALC.create();
         server.addShutdownListener(ALC::destroy);
 
+        Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+        audioHandler = new LibGDXHackApp(config, "PiMP3");
+
+//        Audio audio = Gdx.audio;
+
+//        ALC.create();
+        songManager = new SongManagerImpl(audioHandler, this);
+
+        Song musicTest = new Song(Gdx.audio.newMusic(Gdx.files.local("sound.ogg")));
+
+        songManager.play(musicTest);
+
+//        musicTest.setLooping(true);
+
+        registerCommand(new Command("music") {
+            @Override
+            public void onCommand(SenderInterface sender, String[] args) {
+                Server.getLogger().info("MUSIC");
+
+                songManager.play(musicTest);
+            }
+        });
+
+        started = true;
+    }
+
+    private static void openAlAudioTest() {
+
         //Initialization
         String defaultDeviceName = alcGetString(0, ALC_DEFAULT_DEVICE_SPECIFIER);
         long   device            = alcOpenDevice(defaultDeviceName);
@@ -101,7 +137,7 @@ public class MP3Server extends ServerTerminal implements ICore {
         alcMakeContextCurrent(context);
 
         ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
-        ALCapabilities  alCapabilities  = AL.createCapabilities(alcCapabilities);
+        ALCapabilities alCapabilities  = AL.createCapabilities(alcCapabilities);
 
 
 
@@ -189,9 +225,9 @@ public class MP3Server extends ServerTerminal implements ICore {
         }
 
         server.addShutdownListener(ALC::destroy);
-
-        started = true;
     }
+
+
 
     public static void start(String[] args, Module... modules) {
         new MP3Server(args, modules);
@@ -214,18 +250,6 @@ public class MP3Server extends ServerTerminal implements ICore {
         return this;
     }
 
-    /**
-     * Returns the queue of songs
-     *
-     * @return
-     * @deprecated This will be replaced with it's own class
-     */
-    @Deprecated
-    @Override
-    public Queue<String> getSongsQueue() {
-        return new LinkedList<>(List.of("Some song1", "Some other song", "The best song ever"));
-    }
-
     @Override
     public ExecutorService getExecutorService() {
         return server.getExecutorService();
@@ -234,6 +258,11 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public boolean isStarted() {
         return started;
+    }
+
+    @Override
+    public SongManager getSongManager() {
+        return songManager;
     }
 
     public static MP3Server getInstance() {

@@ -1,13 +1,13 @@
-package com.github.fernthedev.pi_mp3.api.exceptions;
+package com.github.fernthedev.pi_mp3.api.exceptions.module;
 
 import java.security.PrivilegedActionException;
 
-public class MissingDependenciesException extends ModuleException {
+public class ModuleException extends IllegalStateException {
     /**
      * Constructs an IllegalStateException with no detail message.
      * A detail message is a String that describes this particular exception.
      */
-    public MissingDependenciesException() {
+    public ModuleException() {
         super();
     }
 
@@ -18,7 +18,7 @@ public class MissingDependenciesException extends ModuleException {
      *
      * @param s the String that contains a detailed message
      */
-    public MissingDependenciesException(String s) {
+    public ModuleException(String s) {
         super(s);
     }
 
@@ -38,7 +38,7 @@ public class MissingDependenciesException extends ModuleException {
      *                unknown.)
      * @since 1.5
      */
-    public MissingDependenciesException(String message, Throwable cause) {
+    public ModuleException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -56,7 +56,7 @@ public class MissingDependenciesException extends ModuleException {
      *              unknown.)
      * @since 1.5
      */
-    public MissingDependenciesException(Throwable cause) {
+    public ModuleException(Throwable cause) {
         super(cause);
     }
 }

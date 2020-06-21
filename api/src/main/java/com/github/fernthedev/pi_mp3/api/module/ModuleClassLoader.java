@@ -1,6 +1,6 @@
 package com.github.fernthedev.pi_mp3.api.module;
 
-import com.github.fernthedev.pi_mp3.api.exceptions.ModuleException;
+import com.github.fernthedev.pi_mp3.api.exceptions.module.ModuleException;
 import lombok.Getter;
 
 import java.io.File;

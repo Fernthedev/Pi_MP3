@@ -2,7 +2,6 @@ package com.github.fernthedev.pi_mp3.api;
 
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
 
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -24,15 +23,7 @@ public interface ICore {
     ICore getCore();
 
 
-    /**
-     * Returns the queue of songs
-     *
-     * @deprecated This will be replaced with it's own class
-     *
-     * @return
-     */
-    @Deprecated
-    Queue<String> getSongsQueue();
+
 
     ExecutorService getExecutorService();
 
@@ -40,4 +31,5 @@ public interface ICore {
 
     boolean isStarted();
 
+    SongManager getSongManager();
 }

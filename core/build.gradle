@@ -11,6 +11,8 @@ dependencies {
     implementation 'com.github.Fernthedev.light-chat:server:1.6.0' // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
     implementation 'com.github.Fernthedev.light-chat:terminal-server:1.0.0-1.6.0' // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
     api project(':api')
+
+
 }
 
 application {
