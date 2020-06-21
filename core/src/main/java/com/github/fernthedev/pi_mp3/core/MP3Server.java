@@ -3,17 +3,17 @@ package com.github.fernthedev.pi_mp3.core;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.github.fernthedev.lightchat.core.StaticHandler;
-import com.github.fernthedev.lightchat.server.SenderInterface;
+import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
 import com.github.fernthedev.lightchat.server.Server;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminalSettings;
-import com.github.fernthedev.lightchat.server.terminal.command.Command;
 import com.github.fernthedev.pi_mp3.api.ICore;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.SongManager;
 import com.github.fernthedev.pi_mp3.api.module.Module;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
+import com.github.fernthedev.pi_mp3.api.songs.SongManager;
+import com.github.fernthedev.pi_mp3.core.command.MusicCommand;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import lombok.Getter;
@@ -53,9 +53,34 @@ public class MP3Server extends ServerTerminal implements ICore {
 
     private SongManagerImpl songManager;
 
+    public static void main(String[] args) {
+        start(args);
+    }
 
-    private MP3Server(String[] args, Module... modules) {
+
+    public static void start(String[] args, Module... modules) {
+        MP3Server mp3Server = new MP3Server();
+        mp3Server.init(args, modules);
+
+        mp3Server.initAudio();
+        mp3Server.started = true;
+    }
+
+    public static void testModules(String[] args, Module... modules) {
+        MP3Server mp3Server = new MP3Server();
+        mp3Server.init(args, modules);
+
+        mp3Server.started = true;
+    }
+
+
+
+    private MP3Server() {
         instance = this;
+        moduleHandler = new ModuleHandler();
+    }
+
+    private void init(String[] args, Module[] modules) {
         started = false;
         ServerTerminal.init(args,
                 ServerTerminalSettings.builder()
@@ -80,7 +105,7 @@ public class MP3Server extends ServerTerminal implements ICore {
         injector = Guice.createInjector(new ServerGuiceModule());
         MP3Pi.setInjector(injector);
 
-        moduleHandler = new ModuleHandler();
+
 
         if (modules.length > 0) {
             for (Module module : modules) {
@@ -96,6 +121,9 @@ public class MP3Server extends ServerTerminal implements ICore {
         moduleHandler.scanDirectory(moduleFolder, getClass().getClassLoader());
 
         moduleHandler.initializeModules().awaitFinish(1);
+    }
+
+    private void initAudio() {
 
 //        ALC.create();
         server.addShutdownListener(ALC::destroy);
@@ -107,24 +135,19 @@ public class MP3Server extends ServerTerminal implements ICore {
 
 //        ALC.create();
         songManager = new SongManagerImpl(audioHandler, this);
+        new Thread(songManager).start();
 
-        Song musicTest = new Song(Gdx.audio.newMusic(Gdx.files.local("sound.ogg")));
+        Song musicTest = new Song(Gdx.files.local("sound.ogg"));
 
         songManager.play(musicTest);
 
+
 //        musicTest.setLooping(true);
 
-        registerCommand(new Command("music") {
-            @Override
-            public void onCommand(SenderInterface sender, String[] args) {
-                Server.getLogger().info("MUSIC");
-
-                songManager.play(musicTest);
-            }
-        });
-
-        started = true;
+        registerCommand(new MusicCommand());
     }
+
+
 
     private static void openAlAudioTest() {
 
@@ -229,13 +252,8 @@ public class MP3Server extends ServerTerminal implements ICore {
 
 
 
-    public static void start(String[] args, Module... modules) {
-        new MP3Server(args, modules);
-    }
 
-    public static void main(String[] args) {
-        new MP3Server(args);
-    }
+
 
     public static Server getServer() {
         return server;
@@ -248,6 +266,11 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public ICore getCore() {
         return this;
+    }
+
+    @Override
+    public PluginManager getPluginManager() {
+        return MP3Server.getServer().getPluginManager();
     }
 
     @Override

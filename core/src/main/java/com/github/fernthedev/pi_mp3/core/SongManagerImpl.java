@@ -1,13 +1,19 @@
 package com.github.fernthedev.pi_mp3.core;
 
-import com.github.fernthedev.pi_mp3.api.SongManager;
+import com.github.fernthedev.fernutils.thread.ThreadUtils;
+import com.github.fernthedev.pi_mp3.api.events.SongActionEvent;
+import com.github.fernthedev.pi_mp3.api.exceptions.song.NoSongsException;
+import com.github.fernthedev.pi_mp3.api.exceptions.song.SongNotFoundException;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
+import com.github.fernthedev.pi_mp3.api.songs.SongAction;
+import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class SongManagerImpl implements SongManager {
+@SuppressWarnings("JavaDoc")
+public class SongManagerImpl implements SongManager, Runnable {
     private final LibGDXHackApp audioHandler;
     private final MP3Server server;
 
@@ -27,7 +33,7 @@ public class SongManagerImpl implements SongManager {
     /**
      * Gets the song history list
      *
-     * @return
+     * @return history
      */
     @Override
     public List<Song> getSongHistory() {
@@ -47,7 +53,7 @@ public class SongManagerImpl implements SongManager {
     /**
      * Returns the song queue length
      *
-     * @return
+     * @return queue length
      */
     @Override
     public int getSongQueueLength() {
@@ -57,7 +63,7 @@ public class SongManagerImpl implements SongManager {
     /**
      * Returns the song history length
      *
-     * @return
+     * @return history length
      */
     @Override
     public int getSongHistoryLength() {
@@ -67,8 +73,8 @@ public class SongManagerImpl implements SongManager {
     /**
      * Gets the song from the queue
      *
-     * @param index
-     * @return
+     * @param index index
+     * @return song
      */
     @Override
     public Song getSongInQueue(int index) {
@@ -78,8 +84,8 @@ public class SongManagerImpl implements SongManager {
     /**
      * Gets the song from the history
      *
-     * @param index
-     * @return
+     * @param index index
+     * @return song
      */
     @Override
     public Song getSongInHistory(int index) {
@@ -89,7 +95,7 @@ public class SongManagerImpl implements SongManager {
     /**
      * Checks if the song is in the queue
      *
-     * @param song
+     * @param song song
      * @return
      */
     @Override
@@ -116,6 +122,7 @@ public class SongManagerImpl implements SongManager {
     @Override
     @Nullable
     public Song getCurrentSong() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.GET_SONG));
         return currentSong;
     }
 
@@ -124,6 +131,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void replay() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.REPLAY));
         currentSong.getMusic().setPosition(0);
     }
 
@@ -134,7 +142,16 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void setPosition(float position) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SET_POSITION));
         currentSong.getMusic().setPosition(position);
+    }
+
+    /**
+     * Get position of song
+     */
+    @Override
+    public float getPosition() {
+        return currentSong.getMusic().getPosition();
     }
 
     /**
@@ -154,9 +171,11 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void play(Song song) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.PLAY));
         audioHandler.runOnAudioThread(() -> {
-            playNext(song);
-            skip();
+            setCurrentSong(song);
+//            playNext(song);
+//            skip();
         });
 
     }
@@ -166,6 +185,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void pause() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.PAUSE));
         audioHandler.runOnAudioThread(() -> currentSong.getMusic().pause());
     }
 
@@ -174,6 +194,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void resume() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.RESUME));
         audioHandler.runOnAudioThread(() -> currentSong.getMusic().pause());
     }
 
@@ -184,6 +205,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void playNext(Song song) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.ADD_TO_PLAY_NEXT.addParameters(song)));
         songQueue.addFirst(song);
     }
 
@@ -194,6 +216,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void addSongToQueue(Song song) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.ADD_TO_QUEUE.addParameters(song)));
         songQueue.addLast(song);
     }
 
@@ -204,6 +227,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void addSongToQueue(Collection<? extends Song> songs) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.ADD_TO_QUEUE.addParameters(songs)));
         songQueue.addAll(songs);
     }
 
@@ -214,7 +238,18 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void addSongToQueue(Song... songs) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.ADD_TO_QUEUE.addParameters(songs)));
         songQueue.addAll(Arrays.asList(songs));
+    }
+
+    @Override
+    public int getPositionInQueue(Song song) {
+        return songQueue.indexOf(song);
+    }
+
+    @Override
+    public int getPositionInHistory(Song song) {
+        return songHistory.indexOf(song);
     }
 
     /**
@@ -222,9 +257,10 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void previousSong() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.PREVIOUS_SONG));
         playNext(currentSong);
 
-        if (songHistory.isEmpty()) throw new IndexOutOfBoundsException("Song history is empty");
+        if (songHistory.isEmpty()) throw new NoSongsException("Song history is empty");
 
 
         setCurrentSong(songHistory.pop());
@@ -237,6 +273,8 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void previousSong(int index) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.PREVIOUS_SONG.addParameters(index)));
+
         if (index < 1) throw new IllegalArgumentException("Index cannot be less than 1");
 
         playNext(currentSong);
@@ -259,11 +297,12 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void previousSong(Song song) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.PREVIOUS_SONG.addParameters(song)));
         playNext(currentSong);
 
         int index = songHistory.indexOf(song);
 
-        if (index < 1) throw new IllegalArgumentException("Cannot find song in history");
+        if (index < 1) throw new SongNotFoundException("Cannot find song in history");
 
         previousSong(index);
     }
@@ -273,7 +312,8 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void skip() {
-        if (songQueue.isEmpty()) throw new IllegalStateException("No songs in queue");
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SKIP));
+        if (songQueue.isEmpty()) throw new NoSongsException("No songs in queue");
 
 
         Song song = currentSong;
@@ -289,6 +329,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void skip(int index) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SKIP.addParameters(index)));
         if (index < 1) throw new IllegalArgumentException("Index cannot be less than 1");
         if (songQueue.size() < index) throw new IndexOutOfBoundsException("Index " + index + " is larger than song queue " + songQueue.size());
 
@@ -310,7 +351,7 @@ public class SongManagerImpl implements SongManager {
     @Override
     public void skip(Song song) {
         int index = songQueue.indexOf(song);
-        if (index < 1) throw new IllegalArgumentException("Cannot find song in history");
+        if (index < 1) throw new SongNotFoundException("Cannot find song in history");
         skip(song);
     }
 
@@ -323,7 +364,7 @@ public class SongManagerImpl implements SongManager {
     @Override
     public void moveSong(Song song, int index) {
         int songIndex = songQueue.indexOf(song);
-        if (songIndex < 1) throw new IllegalArgumentException("Cannot find song in history");
+        if (songIndex < 1) throw new SongNotFoundException("Cannot find song in history");
 
         moveSong(songIndex, index);
     }
@@ -336,6 +377,8 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void moveSong(int song, int index) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.MOVE_SONG.addParameters(song, index)));
+
         if (songQueue.size() < index) throw new IndexOutOfBoundsException("Index " + index + " is larger than song queue " + songQueue.size());
         if (songQueue.size() < song) throw new IndexOutOfBoundsException("Index " + song + " is larger than song queue " + songQueue.size());
 
@@ -351,6 +394,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void remove(int song) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.REMOVE_SONG.addParameters(song)));
         songQueue.remove(song);
     }
 
@@ -362,6 +406,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public boolean remove(Song song) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.REMOVE_SONG.addParameters(song)));
         return songQueue.remove(song);
     }
 
@@ -370,6 +415,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void clear() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.CLEAR_QUEUE));
         songQueue.clear();
     }
 
@@ -378,6 +424,7 @@ public class SongManagerImpl implements SongManager {
      */
     @Override
     public void shuffle() {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SHUFFLE));
         ArrayList<Song> songArrayList = new ArrayList<>(songQueue);
         Collections.shuffle(songArrayList);
         songQueue.clear();
@@ -386,6 +433,7 @@ public class SongManagerImpl implements SongManager {
 
     @Override
     public void loop(LoopMode loopMode) {
+        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SET_LOOP.addParameters(loopMode)));
         switch (loopMode) {
             case SONG:
                 currentSong.getMusic().setLooping(true);
@@ -401,6 +449,13 @@ public class SongManagerImpl implements SongManager {
 
 
     private void setCurrentSong(@NonNull Song song) {
+        ThreadUtils.runAsync(
+                () -> MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SET_SONG.addParameters(song))),
+                server.getExecutorService()
+        );
+        if (currentSong != null)
+            currentSong.getMusic().dispose();
+
         currentSong = song;
         currentSong.getMusic().setOnCompletionListener(music -> {
             if (loopMode == LoopMode.SONG_ONCE) {
@@ -409,11 +464,53 @@ public class SongManagerImpl implements SongManager {
 
             if (!songQueue.isEmpty())
                 skip();
+            else
+                currentSong = null;
 
             music.stop();
+            music.dispose();
         });
 
         audioHandler.runOnAudioThread(() -> currentSong.getMusic().play());
     }
 
+    /**
+     * @deprecated Internal use
+     */
+    @Deprecated
+    public void update() {
+        if (currentSong == null && !songQueue.isEmpty()) {
+            skip();
+        }
+
+
+    }
+
+    /**
+     * When an object implementing interface <code>Runnable</code> is used
+     * to create a thread, starting the thread causes the object's
+     * <code>run</code> method to be called in that separately executing
+     * thread.
+     * <p>
+     * The general contract of the method <code>run</code> is that it may
+     * take any action whatsoever.
+     *
+     * @see Thread#run()
+     */
+    @Override
+    public void run() {
+        while (MP3Server.getServer().isRunning()) {
+            update();
+            try {
+                Thread.sleep(30); // AVOID USING UNNECESSARY CYCLES ON UPDATE
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        if (currentSong != null) {
+            currentSong.getMusic().stop();
+            currentSong.getMusic().dispose();
+        }
+    }
 }

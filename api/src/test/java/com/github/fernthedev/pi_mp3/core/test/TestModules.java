@@ -1,5 +1,6 @@
 package com.github.fernthedev.pi_mp3.core.test;
 
+import com.github.fernthedev.lightchat.core.exceptions.DebugException;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.exceptions.module.ModuleAlreadyRegisteredException;
 import com.github.fernthedev.pi_mp3.api.exceptions.module.ModuleException;
@@ -15,10 +16,12 @@ public class TestModules {
 
     private static void registerInjector() {
         try {
+            MP3Pi.setTestMode(true);
+
             if (moduleHandler == null) moduleHandler = new ModuleHandler();
 
             MP3Pi.setInjector(Guice.createInjector());
-        } catch (IllegalStateException ignored) {}
+        } catch (IllegalStateException ignored) { }
     }
 
     @DisplayName("Same class module registration exception")
@@ -26,8 +29,12 @@ public class TestModules {
     public void testDependencySameClassFail() {
         registerInjector();
         Assertions.assertThrows(ModuleAlreadyRegisteredException.class, () -> {
-            moduleHandler.registerModule(new TestModuleClass());
-            moduleHandler.registerModule(new TestModuleClass());
+            try {
+                moduleHandler.registerModule(new TestModuleClass());
+                moduleHandler.registerModule(new TestModuleClass());
+            } catch (DebugException e) {
+                System.err.println("Debug Exception thrown (this can usually be ignored): " + e.getMessage());
+            }
         });
 
     }
@@ -37,8 +44,12 @@ public class TestModules {
     public void testDependencySameNameFail() {
         registerInjector();
         Assertions.assertThrows(ModuleAlreadyRegisteredException.class, () -> {
-            moduleHandler.registerModule(new TestModuleClass());
-            moduleHandler.registerModule(new TestModuleSameNameClass());
+            try {
+                moduleHandler.registerModule(new TestModuleClass());
+                moduleHandler.registerModule(new TestModuleSameNameClass());
+            } catch (DebugException e) {
+                System.err.println("Debug Exception thrown (this can usually be ignored): " + e.getMessage());
+            }
         });
     }
 
@@ -47,8 +58,10 @@ public class TestModules {
     public void testDependencySelfDependFail() {
         registerInjector();
         Assertions.assertThrows(ModuleException.class, () -> {
+            try {
             moduleHandler.registerModule(new TestModuleSelfClass());
             moduleHandler.initializeModules();
+            } catch (DebugException ignored) {}
         });
     }
 

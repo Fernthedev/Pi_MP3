@@ -1,6 +1,5 @@
-package com.github.fernthedev.pi_mp3.api;
+package com.github.fernthedev.pi_mp3.api.songs;
 
-import com.github.fernthedev.pi_mp3.api.songs.Song;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,59 +11,59 @@ public interface SongManager {
 
     /**
      * Gets the song history list
-     * @return
+     * @return history
      */
     List<Song> getSongHistory();
 
     /**
      * Returns a modifiable list of songs in the queue.
-     * @return
+     * @return queue
      */
     Queue<Song> getSongQueue();
 
     /**
      * Returns the song queue length
-     * @return
+     * @return queue length
      */
     int getSongQueueLength();
 
     /**
      * Returns the song history length
-     * @return
+     * @return history length
      */
     int getSongHistoryLength();
 
     /**
      * Gets the song from the queue
-     * @param index
-     * @return
+     * @param index index
+     * @return song
      */
     Song getSongInQueue(int index);
 
     /**
      * Gets the song from the history
-     * @param index
-     * @return
+     * @param index index
+     * @return song
      */
     Song getSongInHistory(int index);
 
     /**
      * Checks if the song is in the queue
-     * @param song
-     * @return
+     * @param song song
+     * @return true if in queue
      */
     boolean isSongInQueue(@NonNull Song song);
 
     /**
      * Checks whether the song has played before
-     * @param song
-     * @return
+     * @param song song
+     * @return if song is in history
      */
     boolean hasPlayedBefore(@NonNull Song song);
 
     /**
      * Returns the playing song
-     * @return
+     * @return current song
      */
     @Nullable
     Song getCurrentSong();
@@ -76,13 +75,18 @@ public interface SongManager {
 
     /**
      * Sets song position to position
-     * @param position
+     * @param position position
      */
     void setPosition(float position);
 
     /**
+     * Get position of song
+     */
+    float getPosition();
+
+    /**
      * if playing, returns true
-     * @return
+     * @return if playing
      */
     boolean isPlaying();
 
@@ -125,6 +129,10 @@ public interface SongManager {
      * @param songs
      */
     void addSongToQueue(Song... songs);
+
+    int getPositionInQueue(Song song);
+
+    int getPositionInHistory(Song song);
 
     /**
      * Rewinds the song to the previous

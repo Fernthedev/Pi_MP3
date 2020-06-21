@@ -1,11 +1,10 @@
 package com.github.fernthedev.pi_mp3.api;
 
+import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
+import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 import com.google.inject.Injector;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 
 import java.util.concurrent.ExecutorService;
 
@@ -19,6 +18,14 @@ public class MP3Pi implements ICore {
 
     private static ICore core;
 
+    /**
+     * Internal use only
+     */
+    @Deprecated
+    @Getter
+    @Setter
+    private static boolean testMode = false;
+
     public static void setCore(@NonNull ICore core) {
         if (MP3Pi.core != null) throw new IllegalStateException("Core is already initialized in API");
 
@@ -28,7 +35,11 @@ public class MP3Pi implements ICore {
     }
 
     public static void setInjector(Injector injector) {
-        if (MP3Pi.injector != null) throw new IllegalStateException("Injector is already initialized in API");
+        if (MP3Pi.injector != null) {
+            if (MP3Pi.isTestMode()) return;
+
+            throw new IllegalStateException("Injector is already initialized in API");
+        }
         MP3Pi.injector = injector;
     }
 
@@ -42,6 +53,11 @@ public class MP3Pi implements ICore {
     @Override
     public ICore getCore() {
         return core;
+    }
+
+    @Override
+    public PluginManager getPluginManager() {
+        return core.getPluginManager();
     }
 
     @Override

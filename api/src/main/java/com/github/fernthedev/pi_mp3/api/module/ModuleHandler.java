@@ -5,6 +5,8 @@ import com.github.fernthedev.fernutils.thread.multiple.TaskInfoList;
 import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
+import com.github.fernthedev.pi_mp3.api.events.ModuleLoadedEvent;
+import com.github.fernthedev.pi_mp3.api.events.ModulesInitializedEvent;
 import com.github.fernthedev.pi_mp3.api.exceptions.module.*;
 import com.google.gson.Gson;
 import lombok.NonNull;
@@ -86,6 +88,7 @@ public class ModuleHandler {
 
 
 
+        // Run this asynchronously because runThreads is blocking.
         ThreadUtils.runAsync(() -> {
             try {
                 task.runThreads(MP3Pi.getInstance().getExecutorService());
@@ -94,8 +97,10 @@ public class ModuleHandler {
                 e.printStackTrace();
             }
             StaticHandler.getCore().getLogger().info(ColorCode.GREEN + "Finished loading modules");
+            MP3Pi.getInstance().getPluginManager().callEvent(new ModulesInitializedEvent());
         }, Executors.newSingleThreadExecutor());
 
+        // Wait for task to start
         while (task.getFuture() == null) {
             try {
                 Thread.sleep(1);
@@ -176,7 +181,8 @@ public class ModuleHandler {
             awaitDependencies.addAll(Arrays.asList(moduleInfo.depend()));
             awaitDependencies.addAll(Arrays.asList(moduleInfo.softDepend()));
 
-            if (awaitDependencies.parallelStream().anyMatch(s -> s.equals(module.getName()))) throw new ModuleException("You cannot depend on your own module " + module.getName());
+            if (awaitDependencies.parallelStream().anyMatch(s -> s.equals(module.getName())))
+                throw new ModuleException("You cannot depend on your own module " + module.getName());
 
         } else {
             throw new ModuleRequirementException("Class " + module.getClass().getName() + " must have a @ModuleInfo annotation.");
@@ -187,6 +193,10 @@ public class ModuleHandler {
 
         moduleMap.put(module.getClass(), module);
         moduleNameMap.put(module.getName(), module);
+
+        if (!MP3Pi.isTestMode()) {
+            MP3Pi.getInstance().getPluginManager().callEvent(new ModuleLoadedEvent(module));
+        }
     }
 
     public void unregisterModule(@NonNull Module module) {

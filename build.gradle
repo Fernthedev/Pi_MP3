@@ -11,7 +11,7 @@ allprojects {
     apply plugin: 'io.freefair.lombok'
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'com.github.johnrengelman.shadow'
-    apply plugin: 'application'
+
 
     group 'com.github.Fernthedev'
     version '1.0.0'
@@ -114,13 +114,18 @@ allprojects {
         main.kotlin.srcDirs += ['src/main/java']
     }
 
-    run {
-        workingDir = rootProject.projectDir
-    }
+
 
     build.dependsOn shadowJar
 }
 
+configure(subprojects.findAll {it.name != 'api'}) {
+    apply plugin: 'application'
+
+    run {
+        workingDir = rootProject.projectDir
+    }
+}
 
 
 configure(subprojects.findAll {it.name != 'core' && it.name != 'api'}) {

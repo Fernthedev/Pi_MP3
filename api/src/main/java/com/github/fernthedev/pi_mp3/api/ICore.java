@@ -1,6 +1,8 @@
 package com.github.fernthedev.pi_mp3.api;
 
+import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
+import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 
 import java.util.concurrent.ExecutorService;
 
@@ -22,8 +24,7 @@ public interface ICore {
      */
     ICore getCore();
 
-
-
+    PluginManager getPluginManager();
 
     ExecutorService getExecutorService();
 

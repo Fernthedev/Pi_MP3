@@ -14,7 +14,7 @@ public class ModuleLoadingTest {
     @DisplayName("Asynchronous module registration")
     @Test
     public void testAsyncModuleRegistration() {
-        Assertions.assertTimeout(Duration.ofSeconds(180), () -> MP3Server.start(new String[0],
+        Assertions.assertTimeout(Duration.ofSeconds(180), () -> MP3Server.testModules(new String[0],
                 new TestModuleClass1(),
                 new TestModuleClass2(),
                 new TestModuleClass3(),
