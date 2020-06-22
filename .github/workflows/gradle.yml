@@ -26,7 +26,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle        
       - name: Build with Gradle
-        run: ./gradlew clean build
+        run: ./gradlew clean test build
       - name: Upload Gui artifacts
         uses: actions/upload-artifact@v1.0.0
         with:
