@@ -4,8 +4,8 @@ import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Queue;
+import java.util.LinkedList;
+import java.util.concurrent.CompletableFuture;
 
 public interface SongManager {
 
@@ -13,13 +13,13 @@ public interface SongManager {
      * Gets the song history list
      * @return history
      */
-    List<Song> getSongHistory();
+    LinkedList<Song> getSongHistory();
 
     /**
      * Returns a modifiable list of songs in the queue.
      * @return queue
      */
-    Queue<Song> getSongQueue();
+    LinkedList<Song> getSongQueue();
 
     /**
      * Returns the song queue length
@@ -74,10 +74,22 @@ public interface SongManager {
     void replay();
 
     /**
+     *
+     * @param volume volume of current song
+     */
+    CompletableFuture<Song> setVolume(float volume);
+
+    /**
+     *
+     * @return volume of current song
+     */
+    float getVolume();
+
+    /**
      * Sets song position to position
      * @param position position
      */
-    void setPosition(float position);
+    CompletableFuture<Song> setPosition(float position);
 
     /**
      * Get position of song
@@ -92,19 +104,21 @@ public interface SongManager {
 
     /**
      * Plays the song instantly
+     * Runs on Audio Thread
      * @param song
      */
-    void play(@NonNull Song song);
+    CompletableFuture<Song> play(@NonNull Song song);
 
     /**
      * Pauses the song
+     * Runs on audio thread
      */
-    void pause();
+    CompletableFuture<Song> pause();
 
     /**
      * Resumes the song
      */
-    void resume();
+    CompletableFuture<Song> resume();
 
     /**
      * Adds the song to the first queue
@@ -137,39 +151,39 @@ public interface SongManager {
     /**
      * Rewinds the song to the previous
      */
-    void previousSong();
+    CompletableFuture<Song> previousSong();
 
     /**
      * Goes back to the index of the previous song. The index is from {@link #getSongHistory()}
      * @param index
      */
-    void previousSong(int index);
+    CompletableFuture<Song> previousSong(int index);
 
 
     /**
      * Goes back to the index of the previous song. The song is from {@link #getSongHistory()}
      * @param song
      */
-    void previousSong(Song song);
+    CompletableFuture<Song> previousSong(Song song);
 
     /**
      * Skips to the next song
      */
-    void skip();
+    CompletableFuture<Song> skip();
 
     /**
      * Skips to the index of the next song
      * The index is from {@link #getSongQueue()}
      * @param index
      */
-    void skip(int index);
+    CompletableFuture<Song> skip(int index);
 
     /**
      * Skips to the index of the next song
      * The song is from {@link #getSongQueue()}
      * @param song
      */
-    void skip(@NonNull Song song);
+    CompletableFuture<Song> skip(@NonNull Song song);
 
     /**
      * Moves the song from the queue to the index in queue
@@ -208,7 +222,18 @@ public interface SongManager {
      */
     void shuffle();
 
+    /**
+     * Set loop mode
+     * @param loopMode
+     */
     void loop(@NonNull LoopMode loopMode);
+
+    /**
+     * @deprecated USED FOR TESTING ONLY
+     * DO NOT USE
+     */
+    @Deprecated
+    void setNull();
 
     enum LoopMode {
         SONG,

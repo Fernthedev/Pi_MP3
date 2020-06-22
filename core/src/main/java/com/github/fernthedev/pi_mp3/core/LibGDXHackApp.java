@@ -6,8 +6,14 @@ import com.badlogic.gdx.backends.lwjgl3.audio.OpenALAudio;
 import com.badlogic.gdx.backends.lwjgl3.audio.mock.MockAudio;
 import com.badlogic.gdx.utils.Clipboard;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.github.fernthedev.lightchat.core.ColorCode;
+import com.github.fernthedev.lightchat.core.StaticHandler;
+import com.github.fernthedev.pi_mp3.api.MP3Pi;
+import kotlin.Pair;
 
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
 
 
@@ -21,7 +27,7 @@ public class LibGDXHackApp implements Application {
 
     private Thread thread;
 
-    private BlockingDeque<Runnable> queue = new LinkedBlockingDeque<>();
+    private final BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queue = new LinkedBlockingDeque<>();
 
     LibGDXHackApp(Lwjgl3ApplicationConfiguration config, String title) {
         Lwjgl3NativesLoader.load();
@@ -32,7 +38,7 @@ public class LibGDXHackApp implements Application {
         config.setTitle(title);
 
         Gdx.app = this;
-//        if (!config.disableAudio();) {
+//        if (!MP3Pi.isTestMode()) {
             try {
                 this.audio = Gdx.audio = new OpenALAudio(16,
                         9, 512);
@@ -43,6 +49,7 @@ public class LibGDXHackApp implements Application {
 //        } else {
 //            this.audio = Gdx.audio = new MockAudio();
 //        }
+
         this.files = Gdx.files = new Lwjgl3Files();
         this.clipboard = new Lwjgl3Clipboard();
 
@@ -69,16 +76,26 @@ public class LibGDXHackApp implements Application {
                 try {
                     ((OpenALAudio) audio).update();
 
-                    BlockingDeque<Runnable> queueCopy = new LinkedBlockingDeque<>(queue);
-                    queue.clear();
-                    while (!queueCopy.isEmpty()) {
-                        queueCopy.take().run();
+                    BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queueCopy;
+
+                    synchronized (queue) {
+                        queueCopy = new LinkedBlockingDeque<>(queue);
+                        queue.clear();
                     }
 
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
+                    while (!queueCopy.isEmpty()) {
+                        Pair<Callable<Object>, CompletableFuture<Object>> pair = queueCopy.take();
+
+                        Object o = pair.getFirst().call();
+
+                        pair.getSecond().complete(o);
+                        StaticHandler.getCore().getLogger().debug("Completed " + pair.getSecond());
+                    }
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    e.printStackTrace();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -86,11 +103,14 @@ public class LibGDXHackApp implements Application {
     }
 
     private void cleanup() {
+        StaticHandler.getCore().getLogger().warn("Shutting down Audio Thread");
         if (audio instanceof OpenALAudio) {
             try {
                 ((OpenALAudio) audio).dispose();
             } catch (IllegalStateException ignored) {}
         }
+
+        MP3Pi.getInstance().getLogger().info(ColorCode.GREEN + "Shut down audio thread");
     }
 
     /**
@@ -99,12 +119,18 @@ public class LibGDXHackApp implements Application {
      *
      * @param runnable
      */
-    public void runOnAudioThread(Runnable runnable) {
+    public <T> CompletableFuture<T> runOnAudioThread(Callable<T> runnable) throws Exception {
+        CompletableFuture<T> future = new CompletableFuture<>();
         if (Thread.currentThread() == thread) {
-            runnable.run();
+            future.complete(runnable.call());
         } else {
-            queue.add(runnable);
+            Callable<Object> callable = (Callable<Object>) runnable;
+            CompletableFuture<Object> objectCompletableFuture = (CompletableFuture<Object>) future;
+            synchronized (queue) {
+                queue.add(new Pair<>(callable, objectCompletableFuture));
+            }
         }
+        return future;
     }
 
 

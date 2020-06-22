@@ -10,6 +10,7 @@ public class ServerGuiceModule extends AbstractModule {
      */
     @Override
     protected void configure() {
+        if (MP3Pi.getInstance() == null) throw new IllegalStateException("MP3Pi instance must not be null. Call after it has been initialized");
         bind(MP3Pi.class).toInstance(MP3Pi.getInstance());
     }
 }

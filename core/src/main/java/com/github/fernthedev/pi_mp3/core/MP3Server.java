@@ -1,7 +1,7 @@
 package com.github.fernthedev.pi_mp3.core;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
 import com.github.fernthedev.lightchat.server.Server;
@@ -11,7 +11,6 @@ import com.github.fernthedev.pi_mp3.api.ICore;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.module.Module;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
-import com.github.fernthedev.pi_mp3.api.songs.Song;
 import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 import com.github.fernthedev.pi_mp3.core.command.MusicCommand;
 import com.google.inject.Guice;
@@ -22,6 +21,7 @@ import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALCCapabilities;
 import org.lwjgl.openal.ALCapabilities;
 import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.nio.IntBuffer;
@@ -91,6 +91,8 @@ public class MP3Server extends ServerTerminal implements ICore {
                         .build()
         );
 
+        server.addShutdownListener(() -> System.exit(0));
+
         new Thread(server).start();
 //        server.start();
 
@@ -135,16 +137,23 @@ public class MP3Server extends ServerTerminal implements ICore {
 
 //        ALC.create();
         songManager = new SongManagerImpl(audioHandler, this);
-        new Thread(songManager).start();
+        if (!MP3Pi.isTestMode()) {
+            Thread t = new Thread(songManager);
+            t.setDaemon(true);
+            t.start();
+        }
 
-        Song musicTest = new Song(Gdx.files.local("sound.ogg"));
 
-        songManager.play(musicTest);
+//        Song musicTest = new Song(Gdx.files.local("sound.ogg"));
+
+        if (StaticHandler.isDebug())
+            songManager.play(Constants.getDebugSong());
 
 
 //        musicTest.setLooping(true);
 
         registerCommand(new MusicCommand());
+        StaticHandler.getCore().getLogger().info(ColorCode.GREEN + "Initialized audio");
     }
 
 
@@ -286,6 +295,11 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public SongManager getSongManager() {
         return songManager;
+    }
+
+    @Override
+    public Logger getLogger() {
+        return StaticHandler.getCore().getLogger();
     }
 
     public static MP3Server getInstance() {

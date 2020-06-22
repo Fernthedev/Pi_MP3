@@ -5,6 +5,7 @@ import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
 import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 import com.google.inject.Injector;
 import lombok.*;
+import org.slf4j.Logger;
 
 import java.util.concurrent.ExecutorService;
 
@@ -27,7 +28,7 @@ public class MP3Pi implements ICore {
     private static boolean testMode = false;
 
     public static void setCore(@NonNull ICore core) {
-        if (MP3Pi.core != null) throw new IllegalStateException("Core is already initialized in API");
+        if (MP3Pi.core != null && !MP3Pi.isTestMode()) throw new IllegalStateException("Core is already initialized in API");
 
         MP3Pi.core = core;
 
@@ -78,6 +79,11 @@ public class MP3Pi implements ICore {
     @Override
     public SongManager getSongManager() {
         return core.getSongManager();
+    }
+
+    @Override
+    public Logger getLogger() {
+        return core.getLogger();
     }
 
 

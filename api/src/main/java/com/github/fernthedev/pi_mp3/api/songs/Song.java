@@ -17,6 +17,9 @@ public class Song {
     @Deprecated
     private final OpenALMusic music;
 
+    @Getter
+    private final FileHandle fileHandle;
+
     /**
      * TODO: IMPLEMENT
      */
@@ -25,11 +28,8 @@ public class Song {
     private Duration duration;
 
     public Song(FileHandle file) {
-        this(file, (OpenALMusic) Gdx.audio.newMusic(file));
-    }
-
-    public Song(FileHandle file, OpenALMusic music) {
-        this.music = music;
+        this.fileHandle = file;
+        this.music = (OpenALMusic) Gdx.audio.newMusic(file);
 
         StaticHandler.getCore().getLogger().debug("Duration of sound: " + duration);
     }
