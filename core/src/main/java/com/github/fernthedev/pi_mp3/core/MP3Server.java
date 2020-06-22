@@ -12,6 +12,7 @@ import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.module.Module;
 import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
 import com.github.fernthedev.pi_mp3.api.songs.SongManager;
+import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
 import com.github.fernthedev.pi_mp3.core.command.MusicCommand;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -26,6 +27,8 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import static org.lwjgl.openal.AL10.*;
@@ -52,6 +55,8 @@ public class MP3Server extends ServerTerminal implements ICore {
     private LibGDXHackApp audioHandler;
 
     private SongManagerImpl songManager;
+
+    private List<UIInterface> uiInterfaces = new ArrayList<>();
 
     public static void main(String[] args) {
         start(args);
@@ -300,6 +305,36 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public Logger getLogger() {
         return StaticHandler.getCore().getLogger();
+    }
+
+    /**
+     * Checks if the server is running GUI
+     *
+     * @return Returns true if {@link #getUIPlatforms()} is empty
+     */
+    @Override
+    public boolean isGUI() {
+        return !getUIPlatforms().isEmpty();
+    }
+
+    /**
+     * Get loaded GUIs
+     *
+     * @return registered UIs
+     */
+    @Override
+    public List<UIInterface> getUIPlatforms() {
+        return new ArrayList<>(uiInterfaces);
+    }
+
+    /**
+     * Adds to {@link #getUIPlatforms()} for Modules to validate what UIs are usage such as JavaFX GUI or WebGUI
+     *
+     * @param uiInterface
+     */
+    @Override
+    public void registerUIPlatform(UIInterface uiInterface) {
+        uiInterfaces.add(uiInterface);
     }
 
     public static MP3Server getInstance() {

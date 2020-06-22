@@ -2,7 +2,9 @@ package com.github.fernthedev.pi_mp3.core.command;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.fernthedev.lightchat.core.ColorCode;
+import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.lightchat.server.SenderInterface;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.command.Command;
@@ -33,6 +35,38 @@ public class PlayCommand extends MusicCommand {
 
 
         commandMap.put("file", new FileCommand("file"));
+
+        commandMap.put("folder", new FileCommand("folder") {
+
+            @Override
+            public void onCommand(SenderInterface sender, String[] args) {
+
+                Queue<String> argQueue = new LinkedList<>(Arrays.asList(args));
+
+                while (!argQueue.isEmpty()) {
+                    FileHandle fileHandle = Gdx.files.absolute(argQueue.remove());
+
+                    if (!fileHandle.exists()) throw new InvalidCommandArgumentException("Unable to find file " + fileHandle.name());
+
+                    if (!fileHandle.isDirectory()) throw new InvalidCommandArgumentException(fileHandle.name() + "Must be a directory, not a file");
+
+                    ServerTerminal.sendMessage(sender, "Playing music " + fileHandle.name());
+
+                    for (FileHandle file : fileHandle.list()) {
+                        try {
+                            MP3Pi.getInstance().getSongManager().playNext(new Song(file));
+                        } catch (GdxRuntimeException e) {
+                            if (StaticHandler.isDebug()) e.printStackTrace();
+
+                            ServerTerminal.sendMessage(sender, "Unable to load file " + file.name() + " for: " + e.getMessage());
+                        }
+                    }
+
+
+                }
+
+            }
+        });
     }
 
 
@@ -58,6 +92,8 @@ public class PlayCommand extends MusicCommand {
 
                 if (!fileHandle.exists()) throw new InvalidCommandArgumentException("Unable to find file " + fileHandle.name());
 
+                if (fileHandle.isDirectory()) throw new InvalidCommandArgumentException(fileHandle.name() + "File must be a file, not a directory");
+                
                 ServerTerminal.sendMessage(sender, "Playing music " + fileHandle.name());
 
                 MP3Pi.getInstance().getSongManager().playNext(new Song(fileHandle));

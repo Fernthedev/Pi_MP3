@@ -6,10 +6,6 @@ plugins {
 
 }
 
-group 'com.github.Fernthedev'
-version '1.0.0'
-
-
 javafx {
     version = "14"
     modules = [ 'javafx.controls' ]

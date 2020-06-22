@@ -2,6 +2,7 @@ package com.github.fernthedev.pi_mp3;
 
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.module.Module;
+import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
 import com.github.fernthedev.pi_mp3.core.MP3Server;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -11,7 +12,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-public class HelloFX extends Application {
+public class HelloFX extends Application implements UIInterface {
 
     private Thread uiThread;
     private static String[] args;
@@ -40,7 +41,7 @@ public class HelloFX extends Application {
     @Override
     public void init() throws Exception {
         uiThread = Thread.currentThread();
-
+        MP3Pi.getInstance().registerUIPlatform(this);
     }
 
     @Override
@@ -149,6 +150,7 @@ public class HelloFX extends Application {
         Thread thread = new Thread(() -> {
             try {
                 MP3Server.start(args, new TestModule());
+                serverWatchThread.setDaemon(true);
                 serverWatchThread.start();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -161,4 +163,8 @@ public class HelloFX extends Application {
     }
 
 
+    @Override
+    public String getName() {
+        return "JavaFX UI";
+    }
 }
