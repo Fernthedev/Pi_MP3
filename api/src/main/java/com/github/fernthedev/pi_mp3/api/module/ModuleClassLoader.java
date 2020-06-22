@@ -42,6 +42,7 @@ public class ModuleClassLoader extends URLClassLoader {
         super(new URL[] {folder.toURI().toURL()}, parent);
 
         try {
+
             for (String clazz : description.getClassList()) {
                 Class<?> jarClass;
 

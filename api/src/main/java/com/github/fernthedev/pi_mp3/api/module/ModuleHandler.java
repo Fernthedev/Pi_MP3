@@ -239,6 +239,8 @@ public class ModuleHandler {
             throw new ModuleException(ex);
         }
 
+        if (description.getClassList().isEmpty()) throw new NotAModuleException(file.getName() + " is not a module");
+
 
         final ModuleClassLoader loader;
         try {
@@ -267,7 +269,12 @@ public class ModuleHandler {
                         (dir, name) -> jarPatterns.parallelStream().anyMatch(pattern -> pattern.matcher(name).matches())
                 )
         )) {
-            loadModule(file, classLoader);
+            try {
+                loadModule(file, classLoader);
+            } catch (NotAModuleException e) {
+                if (!StaticHandler.isDebug())
+                    e.printStackTrace();
+            }
         }
     }
 
