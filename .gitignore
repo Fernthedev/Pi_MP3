@@ -4,6 +4,8 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
+# Test song
+test_song.mp3
 modules
 .idea/sonarlint
 banned.json

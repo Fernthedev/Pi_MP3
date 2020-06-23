@@ -56,7 +56,7 @@ public class MP3Server extends ServerTerminal implements ICore {
 
     private SongManagerImpl songManager;
 
-    private List<UIInterface> uiInterfaces = new ArrayList<>();
+    private final List<UIInterface> uiInterfaces = new ArrayList<>();
 
     public static void main(String[] args) {
         start(args);
@@ -96,7 +96,7 @@ public class MP3Server extends ServerTerminal implements ICore {
                         .build()
         );
 
-        server.addShutdownListener(() -> System.exit(0));
+        server.addShutdownListener(() -> getExecutorService().shutdownNow());
 
         new Thread(server).start();
 //        server.start();
@@ -335,6 +335,16 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public void registerUIPlatform(UIInterface uiInterface) {
         uiInterfaces.add(uiInterface);
+    }
+
+    @Override
+    public boolean isDebug() {
+        return StaticHandler.isDebug();
+    }
+
+    @Override
+    public void setDebug(boolean debug) {
+        StaticHandler.setDebug(debug);
     }
 
     public static MP3Server getInstance() {

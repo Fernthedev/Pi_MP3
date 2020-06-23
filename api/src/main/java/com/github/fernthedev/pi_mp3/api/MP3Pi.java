@@ -118,5 +118,15 @@ public class MP3Pi implements ICore {
         core.registerUIPlatform(uiInterface);
     }
 
+    @Override
+    public boolean isDebug() {
+        return core.isDebug();
+    }
+
+    @Override
+    public void setDebug(boolean debug) {
+        core.setDebug(debug);
+    }
+
 
 }

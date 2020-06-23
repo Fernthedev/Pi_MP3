@@ -55,4 +55,8 @@ public interface ICore {
      * Adds to {@link #getUIPlatforms()} for Modules to validate what UIs are usage such as JavaFX GUI or WebGUI
      */
     void registerUIPlatform(UIInterface uiInterface);
+
+    boolean isDebug();
+
+    void setDebug(boolean debug);
 }

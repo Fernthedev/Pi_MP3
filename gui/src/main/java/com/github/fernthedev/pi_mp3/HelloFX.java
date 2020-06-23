@@ -1,23 +1,38 @@
 package com.github.fernthedev.pi_mp3;
 
+import com.github.fernthedev.lightchat.core.ColorCode;
+import com.github.fernthedev.pi_mp3.api.JavaFXFactory;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.module.Module;
+import com.github.fernthedev.pi_mp3.api.UIJavaFXScene;
+import com.github.fernthedev.pi_mp3.api.ui.UIFactory;
 import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
+import com.github.fernthedev.pi_mp3.api.ui.UIScreen;
 import com.github.fernthedev.pi_mp3.core.MP3Server;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import lombok.Getter;
+import org.apache.commons.lang3.Validate;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 
 public class HelloFX extends Application implements UIInterface {
 
     private Thread uiThread;
-    private static String[] args;
-    private StackPane moduleList;
 
+
+    private UIJavaFXScene uiJavaFXScene;
+
+    @Getter
+    private Stage stage;
+
+    private final JavaFXFactory javaFXFactory = new JavaFXFactory(this);
+
+    @Getter
+    private static HelloFX instance;
 
     /**
      * The application initialization method. This method is called immediately
@@ -41,35 +56,26 @@ public class HelloFX extends Application implements UIInterface {
     @Override
     public void init() throws Exception {
         uiThread = Thread.currentThread();
-        MP3Pi.getInstance().registerUIPlatform(this);
+
+        HelloFX.instance = this;
     }
 
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
+
+        stage.setTitle("Pi MP3 JavaFX UI");
 
 //        GUIModule guiModule = new GUIModule();
 //        ModuleHandler.registerModule(guiModule);
+        System.out.println(ColorCode.BLUE + "Starting GUI");
 
 
-        String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        Label l = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
+        instance.runOnUIThread(() -> {
+            instance.setCurrentScreen(new StartScene(this, new StackPane(), 640, 480));
+            return null;
+        });
 
-        StackPane stackPane = new StackPane(l);
-        // Wait for the server to finish startup
-        new Thread(() -> {
-            try {
-                while (MP3Server.getServer() == null || MP3Pi.getInstance() == null || !MP3Server.getInstance().isStarted()) Thread.sleep(1); // Wait for server to init
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            showModules(stage, l, stackPane);
-        }).start();
-
-        Scene scene = new Scene(stackPane, 640, 480);
-
-        stage.setScene(scene);
         stage.show();
         stage.setOnCloseRequest(event -> {
             if (event.getEventType() == WindowEvent.WINDOW_CLOSE_REQUEST) {
@@ -78,60 +84,75 @@ public class HelloFX extends Application implements UIInterface {
         });
     }
 
-    private void showModules(Stage stage, Label l, StackPane pane) {
-        Label moduleListLabel = new Label("Server loaded modules: ");
-        double y = l.getTranslateY() + 20;
-        moduleListLabel.setTranslateY(y);
-        moduleList = new StackPane(moduleListLabel);
-
-
-        for (Module module : MP3Pi.getInstance().getModuleHandler().getModuleList()) {
-            y += 20;
-
-            Label modLabel = new Label(module.getName() + " " + module.getDescription().toString());
-            modLabel.setTranslateY(y);
-            moduleList.getChildren().add(modLabel);
-        }
-
-
-
-        runOnUIThread(() -> {
-            pane.getChildren().add(moduleList);
-            l.setText(l.getText() + " Server running status: " + MP3Server.getServer().isRunning());
-//            Scene scene = new Scene(new StackPane(l, pane), 640, 480);
-//
-//            stage.setScene(scene);
-            stage.show();
-        });
-    }
 
     /**
      * MUST USE FOR UPDATING THE UI
      *
      * JAVAFX CONTAINS A UI THREAD WHICH
      * MUST BE USED FOR MANIPULATING THE UI
-     * @param runnable
+     * @param callable
      */
-    public static void runOnUIThread(Runnable runnable) {
+    public <V> CompletableFuture<V> runOnUIThread(Callable<V> callable) {
+        CompletableFuture<V> completableFuture = new CompletableFuture<>();
+
         if (Platform.isFxApplicationThread()) {
-            runnable.run();
+            try {
+                completableFuture.complete(callable.call());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else {
-            Platform.runLater(runnable);
+            Platform.runLater(() -> {
+                try {
+                    completableFuture.complete(callable.call());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
+
+        return completableFuture;
+    }
+
+    /**
+     * Returns the UI factory of UI
+     * It should contain the default
+     * UI element styles and settings
+     * used throughout the interface.
+     *
+     * @return ui factory
+     */
+    @Override
+    public UIFactory getUIFactory() {
+
+        return javaFXFactory;
     }
 
     private static void close() {
         try {
-            MP3Server.getServer().shutdownServer();
-        } catch (IllegalStateException ignored) {}
+            Thread shutdownJavaFX = new Thread(Platform::exit);
 
-        Platform.exit();
-        System.exit(0);
+            shutdownJavaFX.setDaemon(true);
+            shutdownJavaFX.start();
+
+            MP3Server.getServer().shutdownServer();
+
+            shutdownJavaFX.join();
+
+            System.exit(0);
+        } catch (IllegalStateException e) {
+            MP3Pi.getInstance().getLogger().warn("Message when shutting down: " + e.getMessage());
+
+            if (MP3Pi.getInstance().isDebug()) e.printStackTrace();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        }
+
 
     }
 
     public static void main(String[] args) {
-        HelloFX.args = args;
 
         // Checks if the server is shutdown
         Thread serverWatchThread = new Thread(() -> {
@@ -149,9 +170,13 @@ public class HelloFX extends Application implements UIInterface {
 
         Thread thread = new Thread(() -> {
             try {
+                System.out.println("Starting MP3 server");
                 MP3Server.start(args, new TestModule());
+                Validate.notNull(instance);
+                MP3Pi.getInstance().registerUIPlatform(instance);
                 serverWatchThread.setDaemon(true);
                 serverWatchThread.start();
+
             } catch (Exception e) {
                 e.printStackTrace();
                 close();
@@ -166,5 +191,41 @@ public class HelloFX extends Application implements UIInterface {
     @Override
     public String getName() {
         return "JavaFX UI";
+    }
+
+    /**
+     * Gets the current screen
+     *
+     * @return screen
+     */
+    @Override
+    public UIScreen getCurrentScreen() {
+        return uiJavaFXScene;
+    }
+
+    /**
+     * Sets the current screen
+     *
+     * @param uiScreen
+     * @return
+     */
+    @Override
+    public CompletableFuture<UIScreen> setCurrentScreen(UIScreen uiScreen) {
+        this.uiJavaFXScene = (UIJavaFXScene) uiScreen;
+        
+        return runOnUIThread(() -> {
+            stage.setScene(uiJavaFXScene);
+            return uiJavaFXScene;
+        });
+    }
+
+    /**
+     * Returns true if currently running on the UI thread
+     *
+     * @return
+     */
+    @Override
+    public boolean isUIThread() {
+        return Platform.isFxApplicationThread();
     }
 }

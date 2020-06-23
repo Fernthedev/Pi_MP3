@@ -54,9 +54,8 @@ public class LibGDXHackApp implements Application {
         this.clipboard = new Lwjgl3Clipboard();
 
 
-        new Thread(() -> {
+        thread = new Thread(() -> {
             try {
-                thread = Thread.currentThread();
                 loop();
             } catch(Throwable t) {
                 if (t instanceof RuntimeException)
@@ -66,7 +65,10 @@ public class LibGDXHackApp implements Application {
             } finally {
                 cleanup();
             }
-        }).start();
+        });
+
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void loop() {
