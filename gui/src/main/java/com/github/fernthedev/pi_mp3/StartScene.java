@@ -3,7 +3,7 @@ package com.github.fernthedev.pi_mp3;
 import com.github.fernthedev.pi_mp3.api.JavaFXButton;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.UIJavaFXScene;
-import com.github.fernthedev.pi_mp3.api.module.Module;
+import com.github.fernthedev.modules.Module;
 import com.github.fernthedev.pi_mp3.api.ui.Position;
 import com.github.fernthedev.pi_mp3.api.ui.UIButton;
 import com.github.fernthedev.pi_mp3.api.ui.UIElement;

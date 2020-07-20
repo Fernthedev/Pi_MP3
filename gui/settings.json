@@ -1,9 +1,0 @@
-{
-  "port": 3422,
-  "password": "password",
-  "useMulticast": false,
-  "passwordRequiredForLogin": false,
-  "useNativeTransport": true,
-  "jsonCodec": "GSON",
-  "timeoutTime": 30000
-}

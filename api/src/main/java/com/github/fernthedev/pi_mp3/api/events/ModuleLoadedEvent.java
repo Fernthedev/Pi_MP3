@@ -2,7 +2,7 @@ package com.github.fernthedev.pi_mp3.api.events;
 
 import com.github.fernthedev.lightchat.core.api.event.api.Event;
 import com.github.fernthedev.lightchat.core.api.event.api.HandlerList;
-import com.github.fernthedev.pi_mp3.api.module.Module;
+import com.github.fernthedev.modules.Module;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

@@ -7,10 +7,13 @@ import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
 import com.github.fernthedev.lightchat.server.Server;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminalSettings;
+import com.github.fernthedev.modules.Module;
+import com.github.fernthedev.modules.ModuleHandler;
+import com.github.fernthedev.modules.ModuleLoadingHandler;
 import com.github.fernthedev.pi_mp3.api.ICore;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.module.Module;
-import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
+import com.github.fernthedev.pi_mp3.api.events.ModuleLoadedEvent;
+import com.github.fernthedev.pi_mp3.api.events.ModulesInitializedEvent;
 import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
 import com.github.fernthedev.pi_mp3.core.command.MusicCommand;
@@ -40,15 +43,15 @@ import static org.lwjgl.system.libc.LibCStdlib.free;
 /**
  * Contains and manages the core of the application.
  */
-public class MP3Server extends ServerTerminal implements ICore {
+public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 
     @Getter
-    private static Injector injector;
+    private static Injector instanceInjector;
 
     private static MP3Server instance;
 
     @Getter
-    private final ModuleHandler moduleHandler;
+    private final ModuleLoadingHandler moduleHandler;
     private volatile boolean started;
 
     @Getter
@@ -82,7 +85,7 @@ public class MP3Server extends ServerTerminal implements ICore {
 
     private MP3Server() {
         instance = this;
-        moduleHandler = new ModuleHandler();
+        moduleHandler = new ModuleLoadingHandler(this);
     }
 
     private void init(String[] args, Module[] modules) {
@@ -101,16 +104,11 @@ public class MP3Server extends ServerTerminal implements ICore {
         new Thread(server).start();
 //        server.start();
 
-        try {
-            server.getStartupLock().waitOnLock();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            e.printStackTrace();
-        }
+        server.getStartupLock().join();
 
         MP3Pi.setCore(this);
-        injector = Guice.createInjector(new ServerGuiceModule());
-        MP3Pi.setInjector(injector);
+        instanceInjector = Guice.createInjector(new ServerGuiceModule());
+        MP3Pi.setInjector(instanceInjector);
 
 
 
@@ -128,6 +126,7 @@ public class MP3Server extends ServerTerminal implements ICore {
         moduleHandler.scanDirectory(moduleFolder, getClass().getClassLoader());
 
         moduleHandler.initializeModules().awaitFinish(1);
+        MP3Pi.getInstance().getPluginManager().callEvent(new ModulesInitializedEvent());
     }
 
     private void initAudio() {
@@ -293,6 +292,11 @@ public class MP3Server extends ServerTerminal implements ICore {
     }
 
     @Override
+    public Injector getInjector() {
+        return instanceInjector;
+    }
+
+    @Override
     public boolean isStarted() {
         return started;
     }
@@ -340,6 +344,11 @@ public class MP3Server extends ServerTerminal implements ICore {
     @Override
     public boolean isDebug() {
         return StaticHandler.isDebug();
+    }
+
+    @Override
+    public void loadedModule(Module module) {
+        getPluginManager().callEvent(new ModuleLoadedEvent(module));
     }
 
     @Override

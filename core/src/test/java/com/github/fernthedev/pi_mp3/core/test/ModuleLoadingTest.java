@@ -10,7 +10,6 @@ import java.time.Duration;
 
 public class ModuleLoadingTest {
 
-
     @DisplayName("Asynchronous module registration")
     @Test
     public void testAsyncModuleRegistration() {

@@ -1,7 +1,7 @@
 package com.github.fernthedev.pi_mp3.api;
 
 import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
-import com.github.fernthedev.pi_mp3.api.module.ModuleHandler;
+import com.github.fernthedev.modules.ModuleLoadingHandler;
 import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
 import com.google.inject.Injector;
@@ -69,7 +69,7 @@ public class MP3Pi implements ICore {
     }
 
     @Override
-    public ModuleHandler getModuleHandler() {
+    public ModuleLoadingHandler getModuleHandler() {
         return core.getModuleHandler();
     }
 
