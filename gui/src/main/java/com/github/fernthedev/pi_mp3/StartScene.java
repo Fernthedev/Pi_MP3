@@ -1,9 +1,8 @@
 package com.github.fernthedev.pi_mp3;
 
-import com.github.fernthedev.pi_mp3.api.JavaFXButton;
+import com.github.fernthedev.modules.Module;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.UIJavaFXScene;
-import com.github.fernthedev.modules.Module;
 import com.github.fernthedev.pi_mp3.api.ui.Position;
 import com.github.fernthedev.pi_mp3.api.ui.UIButton;
 import com.github.fernthedev.pi_mp3.api.ui.UIElement;
@@ -33,7 +32,7 @@ public class StartScene extends UIJavaFXScene {
         String javafxVersion = System.getProperty("javafx.version");
         Label l = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
 
-        JavaFXButton button = (JavaFXButton) getUIFactory().createButton(new Position(l.getTranslateX(), l.getTranslateY() - 80));
+        UIButton button = getUIFactory().createButton(new Position(l.getTranslateX(), l.getTranslateY() - 80));
 
 
         String defaultText = "Some text";

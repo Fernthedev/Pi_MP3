@@ -1,6 +1,8 @@
 package com.github.fernthedev.pi_mp3.core;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.github.fernthedev.config.common.exceptions.ConfigLoadException;
+import com.github.fernthedev.config.gson.GsonConfig;
 import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
@@ -90,14 +92,18 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 
     private void init(String[] args, Module[] modules) {
         started = false;
-        ServerTerminal.init(args,
-                ServerTerminalSettings.builder()
-                        .allowChangePassword(false)
-                        .allowTermPackets(false)
-                        .serverSettings(new MP3ServerSettings())
-                        .launchConsoleWhenNull(false)
-                        .build()
-        );
+        try {
+            ServerTerminal.init(args,
+                    ServerTerminalSettings.builder()
+                            .allowChangePassword(false)
+                            .allowTermPackets(false)
+                            .serverSettings(new GsonConfig<>(new MP3ServerSettings(), new File("config.json")))
+                            .launchConsoleInCMDWhenNone(false)
+                            .build()
+            );
+        } catch (ConfigLoadException e) {
+            e.printStackTrace();
+        }
 
         server.addShutdownListener(() -> getExecutorService().shutdownNow());
 
