@@ -18,6 +18,7 @@ allprojects {
     group 'com.github.Fernthedev'
     version '0.1.0'
 
+    ext.light_chat_ver = "1.6.0" //"1.6.0"
     ext.netty_ver = "4.1.48.Final"
     ext.jline_ver = "3.14.1"
     ext.log4j_ver = "2.13.1"

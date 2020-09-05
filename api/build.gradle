@@ -6,17 +6,17 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.Fernthedev.light-chat:server:1.6.0'
+    compileOnly 'com.github.Fernthedev.light-chat:server:$light_chat_ver'
     // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
-    compileOnly 'com.github.Fernthedev.light-chat:terminal-server:1.0.0-1.6.0'
+    compileOnly "com.github.Fernthedev.light-chat:terminal-server:$light_chat_ver"
     implementation ('com.github.Fernthedev:fern-configmanager:1.3.0')
 
     compileOnly 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
 
     // Required for testing
-    testImplementation 'com.github.Fernthedev.light-chat:server:1.6.0'
+    testImplementation "com.github.Fernthedev.light-chat:server:$light_chat_ver"
     // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
-    testImplementation 'com.github.Fernthedev.light-chat:terminal-server:1.0.0-1.6.0'
+    testImplementation "com.github.Fernthedev.light-chat:terminal-server:$light_chat_ver"
 
 //            {
 //        exclude group: 'com.squareup.okio', module: 'okio'
