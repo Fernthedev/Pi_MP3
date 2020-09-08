@@ -25,7 +25,7 @@ public class LibGDXHackApp implements Application {
     private int logLevel = LOG_INFO;
     private ApplicationLogger applicationLogger;
 
-    private Thread thread;
+    private final Thread thread;
 
     private final BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queue = new LinkedBlockingDeque<>();
 

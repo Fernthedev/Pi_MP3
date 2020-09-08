@@ -146,7 +146,7 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 //        Audio audio = Gdx.audio;
 
 //        ALC.create();
-        songManager = new SongManagerImpl(audioHandler, this);
+        songManager = new SongManagerImpl(abstractMainSongManager -> new OpenALSongManager(abstractMainSongManager, audioHandler), "PiMP3 Song Manager", this);
         if (!MP3Pi.isTestMode()) {
             Thread t = new Thread(songManager);
             t.setDaemon(true);

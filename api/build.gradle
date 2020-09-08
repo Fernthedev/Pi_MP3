@@ -18,6 +18,10 @@ dependencies {
     // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
     testImplementation "com.github.Fernthedev.light-chat:terminal-server:$light_chat_ver"
 
+    compile group: 'com.google.code.findbugs', name: 'findbugs', version: '3.0.1'
+    annotationProcessor group: 'com.google.code.findbugs', name: 'findbugs', version: '3.0.1'
+
+
 //            {
 //        exclude group: 'com.squareup.okio', module: 'okio'
 //    }

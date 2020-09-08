@@ -1,65 +1,118 @@
 package com.github.fernthedev.pi_mp3.api.songs;
 
+import com.github.fernthedev.pi_mp3.api.exceptions.song.SongNotFoundException;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.LinkedList;
+import javax.annotation.OverridingMethodsMustInvokeSuper;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public interface SongManager {
 
     /**
+     * Handles updates in audio thread.
+     */
+    void update();
+
+    /**
+     * This initializes the audio and/or connection to the music service.
+     */
+    void initialize();
+
+    /**
+     * Handles the end of the music
+     */
+    void dispose();
+
+    /**
+     * Gets the parent song manager
+     * @return parent song manager
+     */
+    @Nullable
+    SongManager getParent();
+
+    /**
+     * Returns the unique name of the song manager to identify it.
+     * @return Unique name
+     */
+    default String getUniqueId() {
+        return getName();
+    }
+
+    /**
+     * Name of the song manager e.g OpenAL or Online
+     * This is shown to the user
+     * @return name
+     */
+    String getName();
+
+    /**
      * Gets the song history list
+     *
      * @return history
      */
     LinkedList<Song> getSongHistory();
 
     /**
      * Returns a modifiable list of songs in the queue.
+     *
      * @return queue
      */
     LinkedList<Song> getSongQueue();
+
 
     /**
      * Returns the song queue length
      * @return queue length
      */
-    int getSongQueueLength();
+    default int getSongQueueLength() {
+        return getSongQueue().size();
+    }
 
     /**
      * Returns the song history length
      * @return history length
      */
-    int getSongHistoryLength();
+    default int getSongHistoryLength() {
+        return getSongHistory().size();
+    }
 
     /**
      * Gets the song from the queue
      * @param index index
      * @return song
      */
-    Song getSongInQueue(int index);
+    default Song getSongInQueue(int index) {
+        return getSongQueue().get(index);
+    }
 
     /**
      * Gets the song from the history
      * @param index index
      * @return song
      */
-    Song getSongInHistory(int index);
+    default Song getSongInHistory(int index) {
+        return getSongHistory().get(index);
+    }
 
     /**
      * Checks if the song is in the queue
      * @param song song
      * @return true if in queue
      */
-    boolean isSongInQueue(@NonNull Song song);
+    default boolean isSongInQueue(@NonNull Song song) {
+        return getSongQueue().contains(song);
+    }
 
     /**
      * Checks whether the song has played before
      * @param song song
      * @return if song is in history
      */
-    boolean hasPlayedBefore(@NonNull Song song);
+    default boolean hasPlayedBefore(@NonNull Song song) {
+        return getSongHistory().contains(song);
+    }
 
     /**
      * Returns the playing song
@@ -124,29 +177,47 @@ public interface SongManager {
      * Adds the song to the first queue
      * @param song
      */
-    void playNext(@NonNull Song song);
+    @OverridingMethodsMustInvokeSuper
+    default void playNext(@NonNull Song song) {
+        getSongQueue().addFirst(song);
+    }
 
     /**
      * Adds the song to the queue
      * @param song
      */
-    void addSongToQueue(@NonNull Song song);
+    @OverridingMethodsMustInvokeSuper
+    default void addSongToQueue(@NonNull Song song) {
+        getSongQueue().addLast(song);
+    }
 
     /**
      * Adds the songs to the queue
      * @param songs
      */
-    void addSongToQueue(@NonNull Collection<? extends Song> songs);
+    @OverridingMethodsMustInvokeSuper
+    default void addSongToQueue(@NonNull Collection<? extends Song> songs) {
+        getSongQueue().addAll(songs);
+    }
 
     /**
      * Adds the songs to the queue
      * @param songs
      */
-    void addSongToQueue(Song... songs);
+    @OverridingMethodsMustInvokeSuper
+    default void addSongToQueue(Song... songs) {
+        getSongQueue().addAll(Arrays.asList(songs));
+    }
 
-    int getPositionInQueue(Song song);
+    @OverridingMethodsMustInvokeSuper
+    default int getPositionInQueue(Song song) {
+        return getSongQueue().indexOf(song);
+    }
 
-    int getPositionInHistory(Song song);
+    @OverridingMethodsMustInvokeSuper
+    default int getPositionInHistory(Song song) {
+        return getSongHistory().indexOf(song);
+    }
 
     /**
      * Rewinds the song to the previous
@@ -190,7 +261,12 @@ public interface SongManager {
      * @param song
      * @param index
      */
-    void moveSong(@NonNull Song song, int index);
+    default void moveSong(@NonNull Song song, int index) {
+        int songIndex = getSongQueue().indexOf(song);
+        if (songIndex < 1) throw new SongNotFoundException("Cannot find song in history");
+
+        moveSong(songIndex, index);
+    }
 
     /**
      * Moves the song from the index in the queue to the new index in queue
@@ -203,30 +279,51 @@ public interface SongManager {
      * Removes the song from queue
      * @param song
      */
-    void remove(@NonNull int song);
+    @OverridingMethodsMustInvokeSuper
+    default void removeFromQueue(@NonNull int song) {
+        getSongQueue().remove(song);
+    }
 
     /**
      * Removes the song from queue
      * @param song
      * @return true if song removed, false if no song in queue
      */
-    boolean remove(@NonNull Song song);
+    @OverridingMethodsMustInvokeSuper
+    default boolean removeFromQueue(@NonNull Song song) {
+        return getSongQueue().remove(song);
+    }
 
     /**
      * Removes all songs from queue
      */
-    void clear();
+    @OverridingMethodsMustInvokeSuper
+    default void clear() {
+        getSongQueue().clear();
+    }
 
     /**
      * Shuffles all songs in queue in random order.
      */
-    void shuffle();
+    default void shuffle() {
+        ArrayList<Song> songArrayList = new ArrayList<>(getSongQueue());
+        Collections.shuffle(songArrayList);
+        getSongQueue().clear();
+        getSongQueue().addAll(songArrayList);
+    }
 
     /**
      * Set loop mode
      * @param loopMode
      */
     void loop(@NonNull LoopMode loopMode);
+
+    /**
+     * Used internally
+     * @param song
+     */
+    @Deprecated
+    void setCurrentSong(@NonNull Song song);
 
     /**
      * @deprecated USED FOR TESTING ONLY
@@ -242,4 +339,6 @@ public interface SongManager {
 
         boolean isSong() {return this == SONG || this == SONG_ONCE; }
     }
+
+
 }
