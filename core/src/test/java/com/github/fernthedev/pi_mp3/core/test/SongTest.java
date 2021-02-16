@@ -225,7 +225,6 @@ public class SongTest {
 
     @DisplayName("Song skip then rewind once")
     @Test
-    @Disabled("Figure out why test is so inconsistent")
     public void testSongPreviousQueue() {
         if (MP3Pi.getInstance().getSongManager().isPlaying() && repetitions == 0)
             MP3Pi.getInstance().getSongManager().skip();
@@ -239,15 +238,29 @@ public class SongTest {
         songList.add(Constants.getDebugSong());
         songList.add(Constants.getDebugSong());
 
-        MP3Pi.getInstance().getSongManager().getSongHistory().clear();
-        MP3Pi.getInstance().getSongManager().clear();
-        MP3Pi.getInstance().getSongManager().addSongToQueue(songList);
         try {
+            MP3Pi.getInstance().getSongManager().play(Constants.getDebugSong());
+            MP3Pi.getInstance().getSongManager().pause().get(10, TimeUnit.SECONDS);
+
+            MP3Pi.getInstance().getSongManager().getSongHistory().clear();
+            MP3Pi.getInstance().getSongManager().clear();
+            MP3Pi.getInstance().getSongManager().addSongToQueue(songList);
+
+            // 3 in queue
+            // 0 in prev
+
             StaticHandler.getCore().getLogger().info("Song queue: " + MP3Pi.getInstance().getSongManager().getSongQueue());
             MP3Pi.getInstance().getSongManager().skip().get(10, TimeUnit.SECONDS);
+
+            // 2 in queue
+            // 1 in prev
+
             StaticHandler.getCore().getLogger().info("Song history: " + MP3Pi.getInstance().getSongManager().getSongHistory());
             MP3Pi.getInstance().getSongManager().previousSong().get(10, TimeUnit.SECONDS);
             MP3Pi.getInstance().getSongManager().pause().get(10, TimeUnit.SECONDS);
+
+            // 3 in queue
+            // 0 in prev
 
             StaticHandler.getCore().getLogger().info("Song queue finished: " + MP3Pi.getInstance().getSongManager().getSongQueue());
             StaticHandler.getCore().getLogger().info("Song history finished: " + MP3Pi.getInstance().getSongManager().getSongHistory());
@@ -259,9 +272,8 @@ public class SongTest {
         } catch (TimeoutException e) {
             throw new AssertionError("Took more than 10 seconds", e);
         }
-        // TODO: FIGURE OUT AND FIX INCONSISTENCY
         // - 1 since the song is currently playing when calling previousSong();
-        Assertions.assertEquals(songList.size() - 1, MP3Pi.getInstance().getSongManager().getSongQueue().size());
+        Assertions.assertEquals(songList.size(), MP3Pi.getInstance().getSongManager().getSongQueue().size());
 
     }
 
