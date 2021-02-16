@@ -1,15 +1,13 @@
 package com.github.fernthedev.pi_mp3;
 
 import com.github.fernthedev.lightchat.core.ColorCode;
-import com.github.fernthedev.pi_mp3.api.JavaFXFactory;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.UIJavaFXScene;
-import com.github.fernthedev.pi_mp3.api.ui.UIFactory;
-import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
-import com.github.fernthedev.pi_mp3.api.ui.UIScreen;
 import com.github.fernthedev.pi_mp3.core.MP3Server;
+import com.github.fernthedev.pi_mp3.ui.UIFactory;
+import com.github.fernthedev.pi_mp3.ui.UIInterface;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -24,12 +22,10 @@ public class HelloFX extends Application implements UIInterface {
     private Thread uiThread;
 
 
-    private UIJavaFXScene uiJavaFXScene;
+    private Scene uiJavaFXScene;
 
     @Getter
     private Stage stage;
-
-    private final JavaFXFactory javaFXFactory = new JavaFXFactory(this);
 
     @Getter
     private static HelloFX instance;
@@ -58,6 +54,8 @@ public class HelloFX extends Application implements UIInterface {
         uiThread = Thread.currentThread();
 
         HelloFX.instance = this;
+
+        UIFactory.setUiInterface(this);
     }
 
     @Override
@@ -72,7 +70,8 @@ public class HelloFX extends Application implements UIInterface {
 
 
         instance.runOnUIThread(() -> {
-            instance.setCurrentScreen(new StartScene(this, new StackPane(), 640, 480));
+            StartScene startScene = new StartScene(new StackPane(), 640, 480);
+            instance.setCurrentScreen(startScene);
             return null;
         });
 
@@ -90,8 +89,12 @@ public class HelloFX extends Application implements UIInterface {
      *
      * JAVAFX CONTAINS A UI THREAD WHICH
      * MUST BE USED FOR MANIPULATING THE UI
+     *
+     * Avoid doing anything but the UI in this thread
+     *
      * @param callable
      */
+    @Override
     public <V> CompletableFuture<V> runOnUIThread(Callable<V> callable) {
         CompletableFuture<V> completableFuture = new CompletableFuture<>();
 
@@ -112,20 +115,6 @@ public class HelloFX extends Application implements UIInterface {
         }
 
         return completableFuture;
-    }
-
-    /**
-     * Returns the UI factory of UI
-     * It should contain the default
-     * UI element styles and settings
-     * used throughout the interface.
-     *
-     * @return ui factory
-     */
-    @Override
-    public UIFactory getUIFactory() {
-
-        return javaFXFactory;
     }
 
     private static void close() {
@@ -173,7 +162,6 @@ public class HelloFX extends Application implements UIInterface {
                 System.out.println("Starting MP3 server");
                 MP3Server.start(args, new TestModule());
                 Validate.notNull(instance);
-                MP3Pi.getInstance().registerUIPlatform(instance);
                 serverWatchThread.setDaemon(true);
                 serverWatchThread.start();
 
@@ -199,7 +187,7 @@ public class HelloFX extends Application implements UIInterface {
      * @return screen
      */
     @Override
-    public UIScreen getCurrentScreen() {
+    public Scene getCurrentScreen() {
         return uiJavaFXScene;
     }
 
@@ -210,8 +198,8 @@ public class HelloFX extends Application implements UIInterface {
      * @return
      */
     @Override
-    public CompletableFuture<UIScreen> setCurrentScreen(UIScreen uiScreen) {
-        this.uiJavaFXScene = (UIJavaFXScene) uiScreen;
+    public CompletableFuture<Scene> setCurrentScreen(Scene uiScreen) {
+        this.uiJavaFXScene = uiScreen;
         
         return runOnUIThread(() -> {
             stage.setScene(uiJavaFXScene);

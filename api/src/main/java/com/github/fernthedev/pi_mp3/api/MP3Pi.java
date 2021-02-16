@@ -3,12 +3,10 @@ package com.github.fernthedev.pi_mp3.api;
 import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
 import com.github.fernthedev.modules.ModuleLoadingHandler;
 import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
-import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
 import com.google.inject.Injector;
 import lombok.*;
 import org.slf4j.Logger;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -86,36 +84,6 @@ public class MP3Pi implements ICore {
     @Override
     public Logger getLogger() {
         return core.getLogger();
-    }
-
-    /**
-     * Checks if the server is running GUI
-     *
-     * @return Returns true if {@link #getUIPlatforms()} is empty
-     */
-    @Override
-    public boolean isGUI() {
-        return core.isGUI();
-    }
-
-    /**
-     * Get loaded GUIs
-     *
-     * @return registered UIs
-     */
-    @Override
-    public List<UIInterface> getUIPlatforms() {
-        return core.getUIPlatforms();
-    }
-
-    /**
-     * Adds to {@link #getUIPlatforms()} for Modules to validate what UIs are usage such as JavaFX GUI or WebGUI
-     *
-     * @param uiInterface
-     */
-    @Override
-    public void registerUIPlatform(UIInterface uiInterface) {
-        core.registerUIPlatform(uiInterface);
     }
 
     @Override
