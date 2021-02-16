@@ -198,7 +198,7 @@ public class MusicCommand extends Command implements TabExecutor {
     }
 
     @Override
-    public List<String> getCompletions(SenderInterface sender, String[] args) {
+    public List<String> getCompletions(SenderInterface sender, LinkedList<String> args) {
         if (args.length <= 1) {
             return new ArrayList<>(commandMap.keySet());
         }
