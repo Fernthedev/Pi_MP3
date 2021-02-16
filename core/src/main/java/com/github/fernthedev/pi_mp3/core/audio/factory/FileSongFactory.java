@@ -15,6 +15,8 @@ public class FileSongFactory extends AbstractSongFactory {
         super(new HashSet<>(Collections.singleton(File.class)));
     }
 
+    public static final String NAME = "File";
+
     /**
      * Gets a song based on the parameter given
      * <p>

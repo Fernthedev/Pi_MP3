@@ -26,9 +26,10 @@ public class OpenALSongManager extends AbstractSongChild {
     private final Audio openALAudio;
     private Music songMusic;
 
+    public static final String NAME = "OpenAL";
 
     public OpenALSongManager(MainSongManager mainSongManager, LibGDXHackApp audioHandler) {
-        super(mainSongManager, "OpenAL");
+        super(mainSongManager, NAME);
         this.audioHandler = audioHandler;
 
         if (MP3Pi.isTestMode())

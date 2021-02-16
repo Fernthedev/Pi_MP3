@@ -19,7 +19,7 @@ class SongManagerImpl(
 ) : AbstractMainSongManager(selectedManager, name) {
 
     init {
-        registerSongFactory("File", FileSongFactory())
+        registerSongFactory(FileSongFactory.NAME, FileSongFactory())
     }
 
     /**
