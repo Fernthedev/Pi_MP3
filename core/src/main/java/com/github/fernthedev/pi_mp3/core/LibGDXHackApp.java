@@ -9,12 +9,10 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
+import com.google.common.base.Stopwatch;
 import kotlin.Pair;
 
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.*;
 
 
 public class LibGDXHackApp implements Application {
@@ -75,26 +73,37 @@ public class LibGDXHackApp implements Application {
             // OLDFIXME put it on a separate thread
 
             try {
+                Stopwatch stopwatch = Stopwatch.createStarted();
+
                 if (audio instanceof OpenALAudio) {
                     ((OpenALAudio) audio).update();
                 }
 
+                // Only do work if queue is empty
+                if (!queue.isEmpty()) {
+                    BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queueCopy;
 
-                BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queueCopy;
+                    synchronized (queue) {
+                        queueCopy = new LinkedBlockingDeque<>(queue);
+                        queue.clear();
+                    }
 
-                synchronized (queue) {
-                    queueCopy = new LinkedBlockingDeque<>(queue);
-                    queue.clear();
+                    while (!queueCopy.isEmpty()) {
+                        Pair<Callable<Object>, CompletableFuture<Object>> pair = queueCopy.take();
+
+                        Object o = pair.getFirst().call();
+
+                        pair.getSecond().complete(o);
+                        StaticHandler.getCore().getLogger().debug("Completed " + pair.getSecond());
+                    }
                 }
 
-                while (!queueCopy.isEmpty()) {
-                    Pair<Callable<Object>, CompletableFuture<Object>> pair = queueCopy.take();
+                stopwatch.stop();
 
-                    Object o = pair.getFirst().call();
+                long sleepTime = 20L - stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
-                    pair.getSecond().complete(o);
-                    StaticHandler.getCore().getLogger().debug("Completed " + pair.getSecond());
-                }
+                if (sleepTime > 10)
+                    Thread.sleep(sleepTime);
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
