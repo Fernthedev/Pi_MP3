@@ -7,12 +7,15 @@ import com.github.fernthedev.pi_mp3.ui.PiButton;
 import com.github.fernthedev.pi_mp3.ui.UIFactory;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 public class StartScene extends Scene {
-    private final StackPane stackPane;
+    private final Pane stackPane;
 
     /**
      * Creates a Scene for a specific root Node with a specific size.
@@ -21,7 +24,7 @@ public class StartScene extends Scene {
      * @param height The height of the scene
      * @throws NullPointerException if root is null
      */
-    public StartScene(StackPane stackPane, double width, double height) {
+    public StartScene(Pane stackPane, double width, double height) {
         super(stackPane, width, height);
 
         this.stackPane = stackPane;
@@ -48,9 +51,12 @@ public class StartScene extends Scene {
         }));
 
 
-        stackPane.getChildren().add(l);
+        UIFactory.getUiInterface().runOnUIThread(() -> {
+            stackPane.getChildren().add(l);
 
-        stackPane.getChildren().add(button);
+            stackPane.getChildren().add(button);
+        });
+
         // Wait for the server to finish startup
         new Thread(() -> {
             try {
@@ -68,26 +74,25 @@ public class StartScene extends Scene {
     private void showModules(Label l) {
         Label moduleListLabel = new Label("Server loaded modules: ");
 
+        double y = l.getTranslateY() + 20;
+        moduleListLabel.setTranslateY(y);
+
+        List<Label> labels = new ArrayList<>();
+
+        for (Module module : MP3Pi.getInstance().getModuleHandler().getModuleList()) {
+            y += 20;
+
+            Label modLabel = new Label(module.getName() + " " + module.getDescription().toString());
+            modLabel.setTranslateY(y);
+            labels.add(modLabel);
+        }
+
 
         HelloFX.getInstance().runOnUIThread(() -> {
-            double y = l.getTranslateY() + 20;
-            moduleListLabel.setTranslateY(y);
+            l.setText(l.getText() + " Server running status: " + MP3Server.getServer().isRunning());
 
             stackPane.getChildren().add(moduleListLabel);
-
-
-            for (Module module : MP3Pi.getInstance().getModuleHandler().getModuleList()) {
-                y += 20;
-
-                Label modLabel = new Label(module.getName() + " " + module.getDescription().toString());
-                modLabel.setTranslateY(y);
-                stackPane.getChildren().add(modLabel);
-            }
-            l.setText(l.getText() + " Server running status: " + MP3Server.getServer().isRunning());
-//            Scene scene = new Scene(new StackPane(l, pane), 640, 480);
-//
-//            stage.setScene(scene);
-            return null;
+            stackPane.getChildren().addAll(labels);
         });
     }
 

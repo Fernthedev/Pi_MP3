@@ -8,9 +8,13 @@ import com.github.fernthedev.pi_mp3.ui.UIInterface;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import jfxtras.styles.jmetro.JMetro;
+import jfxtras.styles.jmetro.JMetroStyleClass;
+import jfxtras.styles.jmetro.Style;
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 
@@ -26,6 +30,8 @@ public class HelloFX extends Application implements UIInterface {
 
     @Getter
     private Stage stage;
+
+    private JMetro jMetro;
 
     @Getter
     private static HelloFX instance;
@@ -56,6 +62,7 @@ public class HelloFX extends Application implements UIInterface {
         HelloFX.instance = this;
 
         UIFactory.setUiInterface(this);
+        jMetro = new JMetro(Style.DARK);
     }
 
     @Override
@@ -68,12 +75,16 @@ public class HelloFX extends Application implements UIInterface {
 //        ModuleHandler.registerModule(guiModule);
         System.out.println(ColorCode.BLUE + "Starting GUI");
 
+        BorderPane borderPane = new BorderPane();
+        borderPane.getStyleClass().add(JMetroStyleClass.BACKGROUND);
 
-        instance.runOnUIThread(() -> {
-            StartScene startScene = new StartScene(new StackPane(), 640, 480);
-            instance.setCurrentScreen(startScene);
-            return null;
-        });
+        StackPane stackPane = new StackPane(borderPane);
+
+
+
+
+        StartScene startScene = new StartScene(stackPane, 640, 480);
+        instance.setCurrentScreen(startScene);
 
         stage.show();
         stage.setOnCloseRequest(event -> {
@@ -172,6 +183,7 @@ public class HelloFX extends Application implements UIInterface {
         }, "ServerThread");
 
         thread.start();
+
         launch();
     }
 
@@ -200,6 +212,7 @@ public class HelloFX extends Application implements UIInterface {
     @Override
     public CompletableFuture<Scene> setCurrentScreen(Scene uiScreen) {
         this.uiJavaFXScene = uiScreen;
+        jMetro.setScene(uiScreen);
         
         return runOnUIThread(() -> {
             stage.setScene(uiJavaFXScene);

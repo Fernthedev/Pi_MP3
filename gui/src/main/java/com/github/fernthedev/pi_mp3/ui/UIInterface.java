@@ -8,6 +8,13 @@ import java.util.concurrent.CompletableFuture;
 public interface UIInterface {
     <V> CompletableFuture<V> runOnUIThread(Callable<V> callable);
 
+    default CompletableFuture<Void> runOnUIThread(Runnable runnable) {
+        return runOnUIThread(() -> {
+            runnable.run();
+            return null;
+        });
+    }
+
     String getName();
 
     Scene getCurrentScreen();
