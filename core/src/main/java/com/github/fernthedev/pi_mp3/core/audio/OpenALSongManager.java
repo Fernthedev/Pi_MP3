@@ -1,13 +1,19 @@
 package com.github.fernthedev.pi_mp3.core.audio;
 
+import com.badlogic.gdx.Audio;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.backends.lwjgl3.audio.OpenALAudio;
+import com.badlogic.gdx.backends.lwjgl3.audio.OpenALMusic;
+import com.badlogic.gdx.backends.lwjgl3.audio.mock.MockAudio;
 import com.badlogic.gdx.files.FileHandle;
+import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.exceptions.song.NoSongPlayingException;
 import com.github.fernthedev.pi_mp3.api.exceptions.song.SongNotFoundException;
 import com.github.fernthedev.pi_mp3.api.songs.AbstractSongChild;
 import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
 import com.github.fernthedev.pi_mp3.core.LibGDXHackApp;
+import com.github.fernthedev.pi_mp3.core.audio.test.FakeMusic;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,15 +23,18 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings("JavaDoc")
 public class OpenALSongManager extends AbstractSongChild {
     private final LibGDXHackApp audioHandler;
-    private final OpenALAudio openALAudio;
-    private SongMusic songMusic;
+    private final Audio openALAudio;
+    private Music songMusic;
 
 
     public OpenALSongManager(MainSongManager mainSongManager, LibGDXHackApp audioHandler) {
         super(mainSongManager, "OpenAL");
         this.audioHandler = audioHandler;
 
-        openALAudio = new OpenALAudio();
+        if (MP3Pi.isTestMode())
+            openALAudio = new MockAudio();
+        else
+            openALAudio = new OpenALAudio();
     }
 
     /**
@@ -43,7 +52,8 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public void initialize() {
-        songMusic.reset();
+        if (songMusic instanceof OpenALMusic)
+            ((OpenALMusic) songMusic).reset();
     }
 
 
@@ -56,7 +66,9 @@ public class OpenALSongManager extends AbstractSongChild {
 
             songMusic.stop();
             songMusic.dispose();
-            openALAudio.dispose();
+
+            if (openALAudio instanceof OpenALAudio)
+                ((OpenALAudio) openALAudio).dispose();
         }
     }
 
@@ -421,7 +433,12 @@ public class OpenALSongManager extends AbstractSongChild {
             songMusic.dispose();
 
         currentSong = song;
-        songMusic = new SongMusic(openALAudio, new FileHandle(song.getFile()), song);
+
+        if (openALAudio instanceof OpenALAudio)
+            songMusic = new SongMusic((OpenALAudio) openALAudio, new FileHandle(song.getFile()), song);
+        else
+            songMusic = new FakeMusic();
+
 
         Song songAsOfNow = currentSong;
         songMusic.setOnCompletionListener(music -> {
