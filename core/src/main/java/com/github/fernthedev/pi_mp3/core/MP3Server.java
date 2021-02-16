@@ -146,7 +146,8 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
     private void initAudio() {
 
 //        ALC.create();
-        server.addShutdownListener(ALC::destroy);
+        if (!MP3Pi.isTestMode())
+            server.addShutdownListener(ALC::destroy);
 
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         audioHandler = new LibGDXHackApp(config, "PiMP3");
@@ -155,8 +156,10 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 
 //        ALC.create();
         songManager = new SongManagerImpl(abstractMainSongManager -> new OpenALSongManager(abstractMainSongManager, audioHandler), "PiMP3 Song Manager", this);
-        songManager.registerSongManager(new VLCSongManager(songManager));
+
         if (!MP3Pi.isTestMode()) {
+            songManager.registerSongManager(new VLCSongManager(songManager));
+
             Thread t = new Thread(songManager);
             t.setDaemon(true);
             t.start();

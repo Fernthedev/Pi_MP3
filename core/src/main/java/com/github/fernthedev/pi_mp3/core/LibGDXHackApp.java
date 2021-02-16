@@ -21,7 +21,6 @@ public class LibGDXHackApp implements Application {
 
     private Audio audio;
     private final Files files;
-    private final Lwjgl3Clipboard clipboard;
     private int logLevel = LOG_INFO;
     private ApplicationLogger applicationLogger;
 
@@ -30,7 +29,9 @@ public class LibGDXHackApp implements Application {
     private final BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queue = new LinkedBlockingDeque<>();
 
     LibGDXHackApp(Lwjgl3ApplicationConfiguration config, String title) {
-        Lwjgl3NativesLoader.load();
+        if (!MP3Pi.isTestMode())
+            Lwjgl3NativesLoader.load();
+
         setApplicationLogger(new Lwjgl3ApplicationLogger());
 
         if (title == null) title = getClass().getSimpleName();
@@ -38,7 +39,7 @@ public class LibGDXHackApp implements Application {
         config.setTitle(title);
 
         Gdx.app = this;
-//        if (!MP3Pi.isTestMode()) {
+        if (!MP3Pi.isTestMode()) {
             try {
                 this.audio = Gdx.audio = new OpenALAudio(16,
                         9, 512);
@@ -46,13 +47,11 @@ public class LibGDXHackApp implements Application {
                 log(getClass().getSimpleName(), "Couldn't initialize audio, disabling audio", t);
                 this.audio = Gdx.audio = new MockAudio();
             }
-//        } else {
-//            this.audio = Gdx.audio = new MockAudio();
-//        }
+        } else {
+            this.audio = Gdx.audio = new MockAudio();
+        }
 
         this.files = Gdx.files = new Lwjgl3Files();
-        this.clipboard = new Lwjgl3Clipboard();
-
 
         thread = new Thread(() -> {
             try {
@@ -74,32 +73,34 @@ public class LibGDXHackApp implements Application {
     private void loop() {
         while (MP3Server.getServer().isRunning()) {
             // OLDFIXME put it on a separate thread
-            if (audio instanceof OpenALAudio) {
-                try {
+
+            try {
+                if (audio instanceof OpenALAudio) {
                     ((OpenALAudio) audio).update();
-
-                    BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queueCopy;
-
-                    synchronized (queue) {
-                        queueCopy = new LinkedBlockingDeque<>(queue);
-                        queue.clear();
-                    }
-
-                    while (!queueCopy.isEmpty()) {
-                        Pair<Callable<Object>, CompletableFuture<Object>> pair = queueCopy.take();
-
-                        Object o = pair.getFirst().call();
-
-                        pair.getSecond().complete(o);
-                        StaticHandler.getCore().getLogger().debug("Completed " + pair.getSecond());
-                    }
-
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+
+
+                BlockingDeque<Pair<Callable<Object>, CompletableFuture<Object>>> queueCopy;
+
+                synchronized (queue) {
+                    queueCopy = new LinkedBlockingDeque<>(queue);
+                    queue.clear();
+                }
+
+                while (!queueCopy.isEmpty()) {
+                    Pair<Callable<Object>, CompletableFuture<Object>> pair = queueCopy.take();
+
+                    Object o = pair.getFirst().call();
+
+                    pair.getSecond().complete(o);
+                    StaticHandler.getCore().getLogger().debug("Completed " + pair.getSecond());
+                }
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -253,7 +254,7 @@ public class LibGDXHackApp implements Application {
 
     @Override
     public Clipboard getClipboard() {
-        return clipboard;
+        return null;
     }
 
     @Override
