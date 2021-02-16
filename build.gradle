@@ -50,6 +50,37 @@ allprojects {
     }
 
     dependencies {
+        implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+        implementation "org.lwjgl:lwjgl"
+        implementation "org.lwjgl:lwjgl-openal"
+        implementation "org.lwjgl:lwjgl-stb"
+        runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+        runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
+        runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+        api ("com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion") {
+            exclude group: "org.lwjgl", module: "lwjgl"
+            exclude group: "org.lwjgl", module: "lwjgl-glfw"
+            exclude group: "org.lwjgl", module: "lwjgl-jemalloc"
+            exclude group: "org.lwjgl", module: "lwjgl-opencl"
+            exclude group: "org.lwjgl", module: "lwjgl-opengl"
+        }
+        api ("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop") {
+            exclude group: "org.lwjgl", module: "lwjgl"
+            exclude group: "org.lwjgl", module: "lwjgl-glfw"
+            exclude group: "org.lwjgl", module: "lwjgl-jemalloc"
+            exclude group: "org.lwjgl", module: "lwjgl-opencl"
+            exclude group: "org.lwjgl", module: "lwjgl-opengl"
+        }
+        api ("com.badlogicgames.gdx:gdx:$gdxVersion") {
+            exclude group: "org.lwjgl", module: "lwjgl"
+            exclude group: "org.lwjgl", module: "lwjgl-glfw"
+            exclude group: "org.lwjgl", module: "lwjgl-jemalloc"
+            exclude group: "org.lwjgl", module: "lwjgl-opencl"
+            exclude group: "org.lwjgl", module: "lwjgl-opengl"
+        }
+
         implementation 'com.github.Fernthedev:FernUtils:1.3.3'
         implementation 'com.github.Fernthedev:fern-configmanager:1.3.0'
         implementation 'com.google.inject:guice:4.2.3'
