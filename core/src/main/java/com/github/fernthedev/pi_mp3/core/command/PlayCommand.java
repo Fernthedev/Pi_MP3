@@ -11,10 +11,11 @@ import com.github.fernthedev.lightchat.server.terminal.command.Command;
 import com.github.fernthedev.lightchat.server.terminal.command.FileNameTabExecutor;
 import com.github.fernthedev.lightchat.server.terminal.command.TabExecutor;
 import com.github.fernthedev.lightchat.server.terminal.exception.InvalidCommandArgumentException;
-import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.songs.SongFactory;
+import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
 import com.github.fernthedev.pi_mp3.core.Constants;
-import com.github.fernthedev.pi_mp3.core.audio.songs.FileSong;
+import com.github.fernthedev.pi_mp3.core.audio.factory.FileSongFactory;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import lombok.NonNull;
 
 import java.io.File;
@@ -24,21 +25,19 @@ import java.util.stream.Collectors;
 
 public class PlayCommand extends MusicCommand {
 
-
-    protected PlayCommand() {
+    @Inject
+    protected PlayCommand(Injector injector, MainSongManager songManager, FileSongFactory fileSongFactory) {
         super("play");
         commandMap.put("test", new Command("test") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                MP3Pi.getInstance().getSongManager().play(Constants.getDebugSong());
+                songManager.play(Constants.getDebugSong());
             }
         });
 
 
-
-        commandMap.put("file", new FileCommand("file"));
-
-        commandMap.put("folder", new FileCommand("folder") {
+        Command fileCommand = new FileCommand("file");
+        Command folderCommand = new FileCommand("folder") {
 
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
@@ -56,14 +55,11 @@ public class PlayCommand extends MusicCommand {
 
                     for (FileHandle file : fileHandle.list()) {
                         try {
-                            SongFactory songFactory = MP3Pi.getInstance().getSongManager().getSongFactory("VLC");
-                            MP3Pi.getInstance().getSongManager().playNext(songFactory.getSong(file.file()));
-                        } catch (GdxRuntimeException e) {
+                            songManager.playNext(fileSongFactory.getSong(file));
+                        } catch (GdxRuntimeException | FileNotFoundException e) {
                             if (StaticHandler.isDebug()) e.printStackTrace();
 
                             ServerTerminal.sendMessage(sender, "Unable to load file " + file.name() + " for: " + e.getMessage());
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
                         }
                     }
 
@@ -71,13 +67,26 @@ public class PlayCommand extends MusicCommand {
                 }
 
             }
-        });
+        };
+
+        injector.injectMembers(fileCommand);
+        injector.injectMembers(folderCommand);
+
+        commandMap.put("file", fileCommand);
+
+        commandMap.put("folder", folderCommand);
     }
 
 
     private static class FileCommand extends Command implements TabExecutor {
 
         private static final FileNameTabExecutor fileNameTabExecutor = new FileNameTabExecutor();
+
+        @Inject
+        private FileSongFactory fileSongFactory;
+
+        @Inject
+        private MainSongManager songManager;
 
         public FileCommand(@NonNull String name) {
             super(name);
@@ -101,7 +110,13 @@ public class PlayCommand extends MusicCommand {
                 
                 ServerTerminal.sendMessage(sender, "Playing music " + fileHandle.name());
 
-                MP3Pi.getInstance().getSongManager().playNext(new FileSong(fileHandle));
+                try {
+                    songManager.playNext(fileSongFactory.getSong(fileHandle));
+                } catch (FileNotFoundException e) {
+                    if (StaticHandler.isDebug()) e.printStackTrace();
+
+                    ServerTerminal.sendMessage(sender, "Unable to load file " + fileHandle.name() + " for: " + e.getMessage());
+                }
             }
 
         }
@@ -115,35 +130,7 @@ public class PlayCommand extends MusicCommand {
          */
         @Override
         public List<String> getCompletions(SenderInterface sender, LinkedList<String> args) {
-
             return fileNameTabExecutor.getCompletions(sender, args);
-
-//            ServerTerminal.getAutoCompleteHandler().
-//
-//            if (args.length == 0) return getFiles(new File("."), "");
-//
-//            String arg = args[args.length - 1];
-//            File file = new File(arg);
-//
-//            if (arg.isEmpty()) return getFiles(new File("."), "");
-//
-//            if (!file.exists() && file.getParentFile() == null) {
-//                return getFiles(new File("."), arg);
-//            }
-//
-//            if (!file.exists() || !file.isDirectory()) {
-//                File parent = file.getParentFile();
-//                if (parent != null && parent.exists()) {
-//                    return getFiles(parent, arg);
-//                }
-//            }
-//
-//            if (file.exists() && file.isDirectory()) {
-//                return getFiles(file, arg);
-//            }
-//
-//
-//            return Collections.emptyList();
         }
 
         private List<String> getFiles(File folder, String arg) {

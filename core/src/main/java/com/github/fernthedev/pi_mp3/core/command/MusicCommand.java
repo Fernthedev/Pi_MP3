@@ -6,30 +6,33 @@ import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.command.Command;
 import com.github.fernthedev.lightchat.server.terminal.command.TabExecutor;
 import com.github.fernthedev.lightchat.server.terminal.exception.InvalidCommandArgumentException;
-import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.exceptions.song.NoSongsException;
 import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
 import com.github.fernthedev.pi_mp3.api.songs.SongManager;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 import java.util.*;
 
 public class MusicCommand extends Command implements TabExecutor {
     protected Map<String, Command> commandMap = new HashMap<>();
 
-    public MusicCommand() {
+    @Inject
+    public MusicCommand(Injector injector, MainSongManager songManager) {
         this("music");
-        commandMap.put("play", new PlayCommand());
+
+        commandMap.put("play", injector.getInstance(PlayCommand.class));
 
         Command pause = new Command("stop") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
-                MP3Pi.getInstance().getSongManager().pause();
+                songManager.pause();
             }
         };
 
@@ -40,12 +43,12 @@ public class MusicCommand extends Command implements TabExecutor {
         commandMap.put("resume", new Command("resume") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
-                MP3Pi.getInstance().getSongManager().resume();
+                songManager.resume();
             }
         });
 
@@ -53,24 +56,24 @@ public class MusicCommand extends Command implements TabExecutor {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
                 if (args.length == 0) {
-                    SongManager selected = MP3Pi.getInstance().getSongManager();
+                    SongManager selected = songManager;
 
                     if (selected != null && ((MainSongManager) selected).getSelectedSongManager() != null) selected = ((MainSongManager) selected).getSelectedSongManager();
 
                     ServerTerminal.sendMessage(sender, "Currently using backend " + selected.getName() + ". Other choices are");
 
-                    for (String songManager : MP3Pi.getInstance().getSongManager().getSongManagers().keySet()) {
+                    for (String songManager : songManager.getSongManagers().keySet()) {
                         ServerTerminal.sendMessage(sender, songManager);
                     }
                 } else {
                     String s = args[0];
 
-                    SongManager songManager = MP3Pi.getInstance().getSongManager().getSongManager(s);
+                    SongManager songManagerChild = songManager.getSongManager(s);
 
-                    if (songManager == null)
+                    if (songManagerChild == null)
                         ServerTerminal.sendMessage(sender, ColorCode.RED + "Could not find song manager " + s);
                     else {
-                        MP3Pi.getInstance().getSongManager().selectSongManager(s);
+                        songManager.selectSongManager(s);
                         ServerTerminal.sendMessage(sender, ColorCode.GREEN + "Found and selected song manager " + s);
                     }
                 }
@@ -80,12 +83,12 @@ public class MusicCommand extends Command implements TabExecutor {
         commandMap.put("queue", new Command("queue") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
-                LinkedList<Song> queue = MP3Pi.getInstance().getSongManager().getSongQueue();
+                LinkedList<Song> queue = songManager.getSongQueue();
 
                 if (queue.isEmpty()) {
                     ServerTerminal.sendMessage(sender, "Queue is empty");
@@ -100,12 +103,12 @@ public class MusicCommand extends Command implements TabExecutor {
         commandMap.put("history", new Command("history") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
-                LinkedList<Song> history = MP3Pi.getInstance().getSongManager().getSongHistory();
+                LinkedList<Song> history = songManager.getSongHistory();
 
                 if (history.isEmpty()) {
                     ServerTerminal.sendMessage(sender, "History is empty");
@@ -122,11 +125,11 @@ public class MusicCommand extends Command implements TabExecutor {
             public void onCommand(SenderInterface sender, String[] args) {
                 try {
                     if (args.length == 0) {
-                        MP3Pi.getInstance().getSongManager().previousSong();
+                        songManager.previousSong();
                     } else {
                         if (args[0].replace(".", "").matches("[0-9]+")) {
                             int amount = Integer.parseInt(args[0]);
-                            MP3Pi.getInstance().getSongManager().previousSong(amount);
+                            songManager.previousSong(amount);
                         }
                     }
                 } catch (NoSongsException | IndexOutOfBoundsException e) {
@@ -138,18 +141,18 @@ public class MusicCommand extends Command implements TabExecutor {
         commandMap.put("skip", new Command("skip") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
                 try {
                     if (args.length == 0) {
-                        MP3Pi.getInstance().getSongManager().skip();
+                        songManager.skip();
                     } else {
                         if (args[0].replace(".", "").matches("[0-9]+")) {
                             int amount = Integer.parseInt(args[0]);
-                            MP3Pi.getInstance().getSongManager().skip(amount);
+                            songManager.skip(amount);
                         }
                     }
                 } catch (NoSongsException | IndexOutOfBoundsException e) {
@@ -161,17 +164,17 @@ public class MusicCommand extends Command implements TabExecutor {
         commandMap.put("volume", new Command("volume") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
                 if (args.length == 0) {
-                    ServerTerminal.sendMessage(sender, "Current Volume: " + MP3Pi.getInstance().getSongManager().getVolume());
+                    ServerTerminal.sendMessage(sender, "Current Volume: " + songManager.getVolume());
                 } else {
                     if (args[0].replace(".","").matches("[0-9]+")) {
                         float volume = Float.parseFloat(args[0]);
-                        MP3Pi.getInstance().getSongManager().setVolume(volume);
+                        songManager.setVolume(volume);
                         ServerTerminal.sendMessage(sender, "Current Volume: " + volume);
                     }
                 }
@@ -181,17 +184,17 @@ public class MusicCommand extends Command implements TabExecutor {
         commandMap.put("position", new Command("position") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
-                if (MP3Pi.getInstance().getSongManager().getCurrentSong() == null) {
+                if (songManager.getCurrentSong() == null) {
                     ServerTerminal.sendMessage(sender, "Please play a song before continuing.");
                     return;
                 }
 
                 if (args.length == 0) {
-                    ServerTerminal.sendMessage(sender, "Current position: " + MP3Pi.getInstance().getSongManager().getPosition());
+                    ServerTerminal.sendMessage(sender, "Current position: " + songManager.getPosition());
                 } else {
                     if (args[0].replace(".","").matches("[0-9]+")) {
                         float position = Float.parseFloat(args[0]);
-                        MP3Pi.getInstance().getSongManager().setPosition(position);
+                        songManager.setPosition(position);
                         ServerTerminal.sendMessage(sender, "Current Position: " + position);
                     }
                 }

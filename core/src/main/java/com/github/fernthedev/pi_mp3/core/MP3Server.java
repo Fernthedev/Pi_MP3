@@ -169,7 +169,8 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 
 //        musicTest.setLooping(true);
 
-        registerCommand(new MusicCommand());
+        MusicCommand musicCommand = instanceInjector.getInstance(MusicCommand.class);
+        registerCommand(musicCommand);
         StaticHandler.getCore().getLogger().info(ColorCode.GREEN + "Initialized audio");
     }
 
