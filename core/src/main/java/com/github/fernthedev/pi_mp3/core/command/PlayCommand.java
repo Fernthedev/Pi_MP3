@@ -109,7 +109,7 @@ public class PlayCommand extends MusicCommand {
          * @return
          */
         @Override
-        public List<String> getCompletions(SenderInterface sender, String[] args) {
+        public List<String> getCompletions(SenderInterface sender, LinkedList<String> args) {
 
             return fileNameTabExecutor.getCompletions(sender, args);
 

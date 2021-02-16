@@ -6,7 +6,49 @@ dependencies {
     implementation "com.github.Fernthedev.light-chat:server:$light_chat_ver" // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
     implementation "com.github.Fernthedev.light-chat:terminal-server:$light_chat_ver" // Requires compiling and installing light-chat 1.6.0. Follow instructions at https://github.com/Fernthedev/light-chat/tree/master/java
     api project(':api')
-    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+
+
+    implementation "org.jline:jline:$jline_ver"
+    implementation "org.jline:jline-terminal-jansi:$jline_ver"
+    implementation 'net.minecrell:terminalconsoleappender:1.2.0'
+    implementation 'org.fusesource.jansi:jansi:1.18'
+
+    implementation 'uk.co.caprica:vlcj:4.6.0'
+
+    implementation "org.apache.logging.log4j:log4j-api:$log4j_ver"
+    implementation "org.apache.logging.log4j:log4j-core:$log4j_ver"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_ver"
+
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-openal"
+    implementation "org.lwjgl:lwjgl-stb"
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+    api ("com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion") {
+        exclude group: "org.lwjgl", module: "lwjgl"
+        exclude group: "org.lwjgl", module: "lwjgl-glfw"
+        exclude group: "org.lwjgl", module: "lwjgl-jemalloc"
+        exclude group: "org.lwjgl", module: "lwjgl-opencl"
+        exclude group: "org.lwjgl", module: "lwjgl-opengl"
+    }
+    api ("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop") {
+        exclude group: "org.lwjgl", module: "lwjgl"
+        exclude group: "org.lwjgl", module: "lwjgl-glfw"
+        exclude group: "org.lwjgl", module: "lwjgl-jemalloc"
+        exclude group: "org.lwjgl", module: "lwjgl-opencl"
+        exclude group: "org.lwjgl", module: "lwjgl-opengl"
+    }
+    api ("com.badlogicgames.gdx:gdx:$gdxVersion") {
+        exclude group: "org.lwjgl", module: "lwjgl"
+        exclude group: "org.lwjgl", module: "lwjgl-glfw"
+        exclude group: "org.lwjgl", module: "lwjgl-jemalloc"
+        exclude group: "org.lwjgl", module: "lwjgl-opencl"
+        exclude group: "org.lwjgl", module: "lwjgl-opengl"
+    }
 }
 
 application {

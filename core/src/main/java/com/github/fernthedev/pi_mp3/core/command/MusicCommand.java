@@ -198,12 +198,12 @@ public class MusicCommand extends Command implements TabExecutor {
     }
 
     @Override
-    public List<String> getCompletions(SenderInterface sender, String[] args) {
-        if (args.length <= 1) {
+    public List<String> getCompletions(SenderInterface sender, LinkedList<String> args) {
+        if (args.size() <= 1) {
             return new ArrayList<>(commandMap.keySet());
         }
 
-        Queue<String> argQueue = new LinkedList<>(Arrays.asList(args));
+        LinkedList<String> argQueue = new LinkedList<>(args);
 
         String rootArg = argQueue.remove();
 
@@ -213,6 +213,6 @@ public class MusicCommand extends Command implements TabExecutor {
 
         TabExecutor tabExecutor = (TabExecutor) c;
 
-        return tabExecutor.getCompletions(sender, argQueue.toArray(new String[0]));
+        return tabExecutor.getCompletions(sender, argQueue);
     }
 }
