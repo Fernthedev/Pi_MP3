@@ -42,10 +42,14 @@ public class JavaFXButton extends JavaFXElement<Button> implements UIButton {
         if (MP3Pi.getInstance() == null) return;
 
         ThreadUtils.runAsync(() -> {
-            ThreadUtils.runForLoopAsync(buttonListeners, buttonListener -> {
-                        buttonListener.onEvent(uiInterface, event);
-                    }
-            ).runThreads(MP3Pi.getInstance().getExecutorService());
+            try {
+                ThreadUtils.runForLoopAsync(buttonListeners, buttonListener -> {
+                            buttonListener.onEvent(uiInterface, event);
+                        }
+                ).runThreads(MP3Pi.getInstance().getExecutorService());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }, MP3Pi.getInstance().getExecutorService());
     }
 
