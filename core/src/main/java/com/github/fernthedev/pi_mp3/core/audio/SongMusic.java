@@ -3,6 +3,7 @@ package com.github.fernthedev.pi_mp3.core.audio;
 import com.badlogic.gdx.backends.lwjgl3.audio.OpenALAudio;
 import com.badlogic.gdx.backends.lwjgl3.audio.OpenALMusic;
 import com.badlogic.gdx.files.FileHandle;
+import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
 import com.github.fernthedev.pi_mp3.core.audio.songs.FileSong;
 
@@ -18,6 +19,7 @@ public class SongMusic extends OpenALMusic {
         super(audio, file);
         this.song = song;
 
+        StaticHandler.getCore().getLogger().info("IT IS FILE SONG {}", song.getClass());
         if (song instanceof FileSong) {
             this.music = ((FileSong) song).getMusic();
         } else music = null;

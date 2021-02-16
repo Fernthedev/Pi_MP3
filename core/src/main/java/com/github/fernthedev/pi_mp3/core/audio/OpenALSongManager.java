@@ -26,7 +26,6 @@ public class OpenALSongManager extends AbstractSongChild {
         this.audioHandler = audioHandler;
 
         openALAudio = new OpenALAudio();
-        songMusic = new SongMusic(openALAudio, null, null);
     }
 
     /**
@@ -150,7 +149,7 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public boolean isPlaying() {
-        return currentSong != null || songMusic.isPlaying();
+        return currentSong != null && songMusic.isPlaying();
     }
 
     /**
@@ -267,8 +266,6 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public CompletableFuture<Song> previousSong(int index) {
-
-
         if (index < 1) throw new IllegalArgumentException("Index cannot be less than 1");
         if (getSongHistory().size() < index) throw new IndexOutOfBoundsException("Index " + index + " is larger than song history " + getSongHistory().size());
 
@@ -331,7 +328,6 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public CompletableFuture<Song> skip(int index) {
-
         if (index < 1) throw new IllegalArgumentException("Index cannot be less than 1");
         if (getSongQueue().size() < index) throw new IndexOutOfBoundsException("Index " + index + " is larger than song queue " + getSongQueue().size());
 
@@ -347,6 +343,7 @@ public class OpenALSongManager extends AbstractSongChild {
                     if (oldSong != null)
                         getSongHistory().push(oldSong); // Put old song in history
                 }
+
 
                 setCurrentSong(currentSong);
 
@@ -420,28 +417,30 @@ public class OpenALSongManager extends AbstractSongChild {
 
 
     public void setCurrentSong(@NonNull Song song) {
-        if (currentSong != null)
+        if (currentSong != null && songMusic != null)
             songMusic.dispose();
 
         currentSong = song;
         songMusic = new SongMusic(openALAudio, new FileHandle(song.getFile()), song);
 
-
+        Song songAsOfNow = currentSong;
         songMusic.setOnCompletionListener(music -> {
-            getSongHistory().push(currentSong);
-            if (loopMode == LoopMode.SONG_ONCE) {
-                loop(LoopMode.NONE);
-                play(song);
-                return;
+            if (currentSong == songAsOfNow) {
+                getSongHistory().push(currentSong);
+                if (loopMode == LoopMode.SONG_ONCE) {
+                    loop(LoopMode.NONE);
+                    play(song);
+                    return;
+                }
+
+                if (!getSongQueue().isEmpty())
+                    skip();
+                else
+                    currentSong = null;
+
+                music.stop();
+                music.dispose();
             }
-
-            if (!getSongQueue().isEmpty())
-                skip();
-            else
-                currentSong = null;
-
-            music.stop();
-            music.dispose();
         });
 
         try {

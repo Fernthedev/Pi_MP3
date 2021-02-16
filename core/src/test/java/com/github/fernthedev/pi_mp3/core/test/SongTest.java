@@ -24,18 +24,6 @@ public class SongTest {
         ServerTest.testStartServer();
 
 
-//        Assertions.assertTimeout(Duration.ofSeconds(2), () -> {
-//            while (MP3Pi.getInstance().getCore() != null &&
-//                    MP3Pi.getInstance() == null || MP3Pi.getInstance().getSongManager() == null) {
-//                try {
-//                    Thread.sleep(40);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
-
-
         StaticHandler.getCore().getLogger().info("Adding debug song to play queue");
         Assertions.assertTimeout(Duration.ofSeconds(5), () -> {
             try {
@@ -49,18 +37,6 @@ public class SongTest {
         });
 
         Assertions.assertEquals(Constants.getDebugSong(), MP3Pi.getInstance().getSongManager().getCurrentSong());
-//        Assertions.assertDoesNotThrow(() -> );
-//
-//        Assertions.assertTimeout(Duration.ofSeconds(180), () -> MP3Server.testModules(new String[0],
-//                new TestModuleClass1(),
-//                new TestModuleClass2(),
-//                new TestModuleClass3(),
-//                new TestModuleClass4(),
-//                new TestModuleClass5(),
-//                new TestModuleClass6()
-//        ));
-
-
     }
 
     @DisplayName("Song queue add")
@@ -161,7 +137,7 @@ public class SongTest {
         MP3Pi.getInstance().getSongManager().clear();
         try {
             MP3Pi.getInstance().getSongManager().play(Constants.getDebugSong()).get(10, TimeUnit.SECONDS);
-            MP3Pi.getInstance().getSongManager().pause();
+            MP3Pi.getInstance().getSongManager().pause().get(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             e.printStackTrace();
@@ -174,10 +150,12 @@ public class SongTest {
         Assertions.assertFalse(MP3Pi.getInstance().getSongManager().isPlaying());
 
         Assertions.assertDoesNotThrow(() -> {
+            MP3Pi.getInstance().getSongManager().pause().get(10, TimeUnit.SECONDS);
             MP3Pi.getInstance().getSongManager().setPosition(position).get(10, TimeUnit.SECONDS);
         });
 
-        Assertions.assertEquals(position, MP3Pi.getInstance().getSongManager().getPosition());
+        // Avoid issues with decimals
+        Assertions.assertTrue(Math.abs(position - MP3Pi.getInstance().getSongManager().getPosition()) < 2);
     }
 
     @DisplayName("Song skip 1")
@@ -317,9 +295,18 @@ public class SongTest {
         MP3Pi.getInstance().getSongManager().addSongToQueue(songList);
 
         try {
+            StaticHandler.getCore().getLogger().info("Song manager: {}", MP3Pi.getInstance().getSongManager().getSelectedSongManager().getName());
             MP3Pi.getInstance().getSongManager().skip(skipAmount).get(10, TimeUnit.SECONDS);
-            StaticHandler.getCore().getLogger().info("Song history: " + MP3Pi.getInstance().getSongManager().getSongHistory());
-            MP3Pi.getInstance().getSongManager().previousSong(skipAmount).get(10, TimeUnit.SECONDS);
+
+            // To avoid it getting back into history
+            MP3Pi.getInstance().getSongManager().pause();
+
+            if (skipAmount - 1 > 0) {
+                StaticHandler.getCore().getLogger().info("Song history: " + MP3Pi.getInstance().getSongManager().getSongHistory());
+                MP3Pi.getInstance().getSongManager().previousSong(skipAmount - 1).get(10, TimeUnit.SECONDS);
+
+                MP3Pi.getInstance().getSongManager().pause();
+            }
 
             StaticHandler.getCore().getLogger().info("Song queue: " + MP3Pi.getInstance().getSongManager().getSongQueue());
             StaticHandler.getCore().getLogger().info("Song history finished: " + MP3Pi.getInstance().getSongManager().getSongHistory());

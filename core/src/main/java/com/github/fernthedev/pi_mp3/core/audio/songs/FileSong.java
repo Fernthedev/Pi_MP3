@@ -32,7 +32,7 @@ public class FileSong implements Song {
             MP3Pi.getInstance().getLogger().warn("Could not load {} due to {}", file.getName(), e.getLocalizedMessage());
 
             if (StaticHandler.isDebug())
-                e.printStackTrace();
+                StaticHandler.getCore().getLogger().error(e.getLocalizedMessage(), e);
         }
         this.music = tempMusic;
     }
