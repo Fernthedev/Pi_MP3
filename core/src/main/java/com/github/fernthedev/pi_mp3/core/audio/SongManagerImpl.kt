@@ -1,4 +1,4 @@
-package com.github.fernthedev.pi_mp3.core
+package com.github.fernthedev.pi_mp3.core.audio
 
 import com.github.fernthedev.fernutils.thread.ThreadUtils
 import com.github.fernthedev.pi_mp3.api.events.SongActionEvent
@@ -7,7 +7,8 @@ import com.github.fernthedev.pi_mp3.api.songs.Song
 import com.github.fernthedev.pi_mp3.api.songs.SongAction
 import com.github.fernthedev.pi_mp3.api.songs.SongManager
 import com.github.fernthedev.pi_mp3.api.songs.SongManager.LoopMode
-import java.util.*
+import com.github.fernthedev.pi_mp3.core.MP3Server
+import com.github.fernthedev.pi_mp3.core.audio.factory.FileSongFactory
 import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
@@ -16,6 +17,11 @@ class SongManagerImpl(
     name: String,
     private val server: MP3Server
 ) : AbstractMainSongManager(selectedManager, name) {
+
+    init {
+        registerSongFactory("File", FileSongFactory())
+    }
+
     /**
      * Returns true if the server handling the audio
      * is running

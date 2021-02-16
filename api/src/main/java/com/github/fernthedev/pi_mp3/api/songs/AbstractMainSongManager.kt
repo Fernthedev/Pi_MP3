@@ -16,19 +16,51 @@ import javax.annotation.OverridingMethodsMustInvokeSuper
 
 abstract class AbstractMainSongManager : MainSongManager, Runnable {
     override val songManagers: MutableMap<String, SongManager> = HashMap()
-    protected var selectedManager: SongManager
+    protected var selectedManager: SongManager?
     private var name: String
+    private val songFactories: MutableMap<String, SongFactory> = HashMap()
 
     override fun getName(): String {
         return name;
     }
 
     fun setName(s: String) {
-        this.name = name
+        this.name = s
     }
 
 
+    /**
+     * Gets a copy of the song factories
+     * @return song factories
+     */
+    override fun getSongFactories(): MutableMap<String, SongFactory> {
+        return HashMap(songFactories)
+    }
 
+    /**
+     *
+     * @param name The name of the song factory
+     * @return the song factory
+     *
+     * @throws IllegalArgumentException is thrown if the song manager does not exist
+     */
+    override fun getSongFactory(name: String): SongFactory {
+        return songFactories[name] ?: throw IllegalArgumentException("Could not find song factory $name")
+    }
+
+    /**
+     * Avoid registering the same song factory with multiple names
+     *
+     * @param name The name of the song factory
+     * @param songFactory The song factory instance
+     *
+     * @throws IllegalArgumentException is thrown if the song manager with the name already exists
+     */
+    override fun registerSongFactory(name: String, songFactory: SongFactory) {
+        require(!songFactories.containsKey(name)) {"Song factory $name already exists"}
+
+        songFactories[name] = songFactory
+    }
 
     constructor(selectedManager: SongManager, name: String) {
         this.selectedManager = selectedManager
@@ -38,6 +70,9 @@ abstract class AbstractMainSongManager : MainSongManager, Runnable {
     constructor(selectedManager: Function<AbstractMainSongManager, SongManager>, name: String) {
         this.selectedManager = selectedManager.apply(this)
         this.name = name
+
+        if (selectedManager != null)
+            registerSongManager(selectedSongManager!!)
     }
 
     override fun getParent(): SongManager? {
@@ -56,7 +91,7 @@ abstract class AbstractMainSongManager : MainSongManager, Runnable {
     override fun selectSongManager(s: String): SongManager {
         require(songManagers.containsKey(s)) { "Could not find the song manager $s" }
         selectedManager = songManagers[s]!!
-        return selectedManager
+        return selectedManager!!
     }
 
     override val selectedSongManager: SongManager?
@@ -97,7 +132,8 @@ abstract class AbstractMainSongManager : MainSongManager, Runnable {
      * Handles updates in audio thread.
      */
     override fun update() {
-        selectedManager.update()
+        if (selectedManager != null)
+            selectedManager!!.update()
     }
 
     /**

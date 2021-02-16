@@ -12,11 +12,13 @@ import com.github.fernthedev.lightchat.server.terminal.command.FileNameTabExecut
 import com.github.fernthedev.lightchat.server.terminal.command.TabExecutor;
 import com.github.fernthedev.lightchat.server.terminal.exception.InvalidCommandArgumentException;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
-import com.github.fernthedev.pi_mp3.api.songs.Song;
+import com.github.fernthedev.pi_mp3.api.songs.SongFactory;
 import com.github.fernthedev.pi_mp3.core.Constants;
+import com.github.fernthedev.pi_mp3.core.audio.songs.FileSong;
 import lombok.NonNull;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,11 +56,14 @@ public class PlayCommand extends MusicCommand {
 
                     for (FileHandle file : fileHandle.list()) {
                         try {
-                            MP3Pi.getInstance().getSongManager().playNext(new Song(file));
+                            SongFactory songFactory = MP3Pi.getInstance().getSongManager().getSongFactory("VLC");
+                            MP3Pi.getInstance().getSongManager().playNext(songFactory.getSong(file.file()));
                         } catch (GdxRuntimeException e) {
                             if (StaticHandler.isDebug()) e.printStackTrace();
 
                             ServerTerminal.sendMessage(sender, "Unable to load file " + file.name() + " for: " + e.getMessage());
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
                         }
                     }
 
@@ -96,7 +101,7 @@ public class PlayCommand extends MusicCommand {
                 
                 ServerTerminal.sendMessage(sender, "Playing music " + fileHandle.name());
 
-                MP3Pi.getInstance().getSongManager().playNext(new Song(fileHandle));
+                MP3Pi.getInstance().getSongManager().playNext(new FileSong(fileHandle));
             }
 
         }

@@ -3,6 +3,7 @@ package com.github.fernthedev.pi_mp3.core;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.github.fernthedev.config.common.exceptions.ConfigLoadException;
 import com.github.fernthedev.config.gson.GsonConfig;
+import com.github.fernthedev.fernutils.console.ArgumentArrayUtils;
 import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.core.StaticHandler;
 import com.github.fernthedev.lightchat.core.api.plugin.PluginManager;
@@ -16,8 +17,11 @@ import com.github.fernthedev.pi_mp3.api.ICore;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.events.ModuleLoadedEvent;
 import com.github.fernthedev.pi_mp3.api.events.ModulesInitializedEvent;
-import com.github.fernthedev.pi_mp3.api.songs.SongManager;
+import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
 import com.github.fernthedev.pi_mp3.api.ui.UIInterface;
+import com.github.fernthedev.pi_mp3.core.audio.OpenALSongManager;
+import com.github.fernthedev.pi_mp3.core.audio.SongManagerImpl;
+import com.github.fernthedev.pi_mp3.core.audio.VLCSongManager;
 import com.github.fernthedev.pi_mp3.core.command.MusicCommand;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -92,6 +96,10 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 
     private void init(String[] args, Module[] modules) {
         started = false;
+        ArgumentArrayUtils.parseArguments(args)
+                .handle("-debug", s -> StaticHandler.setDebug(true))
+        .apply();
+
         try {
             ServerTerminal.init(args,
                     ServerTerminalSettings.builder()
@@ -147,6 +155,7 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
 
 //        ALC.create();
         songManager = new SongManagerImpl(abstractMainSongManager -> new OpenALSongManager(abstractMainSongManager, audioHandler), "PiMP3 Song Manager", this);
+        songManager.registerSongManager(new VLCSongManager(songManager));
         if (!MP3Pi.isTestMode()) {
             Thread t = new Thread(songManager);
             t.setDaemon(true);
@@ -308,7 +317,7 @@ public class MP3Server extends ServerTerminal implements ICore, ModuleHandler {
     }
 
     @Override
-    public SongManager getSongManager() {
+    public MainSongManager getSongManager() {
         return songManager;
     }
 

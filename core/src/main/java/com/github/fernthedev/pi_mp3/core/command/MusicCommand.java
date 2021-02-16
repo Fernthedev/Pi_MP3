@@ -1,5 +1,6 @@
 package com.github.fernthedev.pi_mp3.core.command;
 
+import com.github.fernthedev.lightchat.core.ColorCode;
 import com.github.fernthedev.lightchat.server.SenderInterface;
 import com.github.fernthedev.lightchat.server.terminal.ServerTerminal;
 import com.github.fernthedev.lightchat.server.terminal.command.Command;
@@ -7,7 +8,9 @@ import com.github.fernthedev.lightchat.server.terminal.command.TabExecutor;
 import com.github.fernthedev.lightchat.server.terminal.exception.InvalidCommandArgumentException;
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import com.github.fernthedev.pi_mp3.api.exceptions.song.NoSongsException;
+import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
+import com.github.fernthedev.pi_mp3.api.songs.SongManager;
 
 import java.util.*;
 
@@ -46,6 +49,34 @@ public class MusicCommand extends Command implements TabExecutor {
             }
         });
 
+        commandMap.put("backend", new Command("backend") {
+            @Override
+            public void onCommand(SenderInterface sender, String[] args) {
+                if (args.length == 0) {
+                    SongManager selected = MP3Pi.getInstance().getSongManager();
+
+                    if (selected != null && ((MainSongManager) selected).getSelectedSongManager() != null) selected = ((MainSongManager) selected).getSelectedSongManager();
+
+                    ServerTerminal.sendMessage(sender, "Currently using backend " + selected.getName() + ". Other choices are");
+
+                    for (String songManager : MP3Pi.getInstance().getSongManager().getSongManagers().keySet()) {
+                        ServerTerminal.sendMessage(sender, songManager);
+                    }
+                } else {
+                    String s = args[0];
+
+                    SongManager songManager = MP3Pi.getInstance().getSongManager().getSongManager(s);
+
+                    if (songManager == null)
+                        ServerTerminal.sendMessage(sender, ColorCode.RED + "Could not find song manager " + s);
+                    else {
+                        MP3Pi.getInstance().getSongManager().selectSongManager(s);
+                        ServerTerminal.sendMessage(sender, ColorCode.GREEN + "Found and selected song manager " + s);
+                    }
+                }
+            }
+        });
+
         commandMap.put("queue", new Command("queue") {
             @Override
             public void onCommand(SenderInterface sender, String[] args) {
@@ -61,7 +92,7 @@ public class MusicCommand extends Command implements TabExecutor {
                 }
 
                 for (Song song : queue) {
-                    ServerTerminal.sendMessage(sender, queue.indexOf(song) + ": " + song.getFileHandle().name());
+                    ServerTerminal.sendMessage(sender, queue.indexOf(song) + ": " + song.getName());
                 }
             }
         });
@@ -81,7 +112,7 @@ public class MusicCommand extends Command implements TabExecutor {
                 }
 
                 for (Song song : history) {
-                    ServerTerminal.sendMessage(sender, history.indexOf(song) + ": " + song.getFileHandle().name());
+                    ServerTerminal.sendMessage(sender, history.indexOf(song) + ": " + song.getName());
                 }
             }
         });

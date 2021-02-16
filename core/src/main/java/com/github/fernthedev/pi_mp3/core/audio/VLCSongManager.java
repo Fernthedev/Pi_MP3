@@ -1,4 +1,4 @@
-package com.github.fernthedev.pi_mp3.core;
+package com.github.fernthedev.pi_mp3.core.audio;
 
 import com.github.fernthedev.pi_mp3.api.exceptions.song.NoSongPlayingException;
 import com.github.fernthedev.pi_mp3.api.exceptions.song.SongNotFoundException;
@@ -7,17 +7,28 @@ import com.github.fernthedev.pi_mp3.api.songs.MainSongManager;
 import com.github.fernthedev.pi_mp3.api.songs.Song;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
+import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
+import uk.co.caprica.vlcj.media.callback.CallbackMedia;
+import uk.co.caprica.vlcj.player.base.MediaPlayer;
+import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("JavaDoc")
-public class OpenALSongManager extends AbstractSongChild {
-    private final LibGDXHackApp audioHandler;
+public class VLCSongManager extends AbstractSongChild {
+    private static final MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory();
+    private final MediaPlayer mediaPlayer = mediaPlayerFactory.mediaPlayers().newMediaPlayer();
 
-    public OpenALSongManager(MainSongManager mainSongManager, LibGDXHackApp audioHandler) {
-        super(mainSongManager, "OpenAL");
-        this.audioHandler = audioHandler;
+    private static final String FORMAT = "S16N";
+
+    private static final int RATE = 44100;
+
+    private static final int CHANNELS = 2;
+
+    public VLCSongManager(MainSongManager mainSongManager) {
+        super(mainSongManager, "VLC");
     }
 
     /**
@@ -35,7 +46,7 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public void initialize() {
-
+        mediaPlayer.media().play((CallbackMedia) null, new String[0]);
     }
 
 
@@ -44,10 +55,7 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public void dispose() {
-        if (currentSong != null) {
-            currentSong.getMusic().stop();
-            currentSong.getMusic().dispose();
-        }
+        mediaPlayer.release();
     }
 
 
@@ -67,7 +75,7 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public void replay() {
-        currentSong.getMusic().setPosition(0);
+        mediaPlayer.controls().setPosition(0);
     }
 
     /**
@@ -79,10 +87,8 @@ public class OpenALSongManager extends AbstractSongChild {
             throw new NoSongPlayingException("A song must be playing to set volume");
 
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                currentSong.getMusic().setVolume(volume);
-                return currentSong;
-            });
+            mediaPlayer.audio().setVolume((int) volume);
+            return CompletableFuture.completedFuture(currentSong);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -96,7 +102,7 @@ public class OpenALSongManager extends AbstractSongChild {
         if (currentSong == null)
             throw new NoSongPlayingException("A song must be playing to get volume");
 
-        return currentSong.getMusic().getVolume();
+        return mediaPlayer.audio().volume();
     }
 
     /**
@@ -110,12 +116,10 @@ public class OpenALSongManager extends AbstractSongChild {
         if (currentSong == null)
             throw new NoSongPlayingException("A song must be playing to set position");
 
-
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                currentSong.getMusic().setPosition(position);
-                return currentSong;
-            });
+            mediaPlayer.controls().setPosition(position);
+
+            return CompletableFuture.completedFuture(currentSong);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -129,7 +133,7 @@ public class OpenALSongManager extends AbstractSongChild {
         if (currentSong == null)
             throw new NoSongPlayingException("A song must be playing to get volume");
 
-        return currentSong.getMusic().getPosition();
+        return mediaPlayer.status().position();
     }
 
     /**
@@ -139,7 +143,7 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public boolean isPlaying() {
-        return currentSong == null || currentSong.getMusic().isPlaying();
+        return currentSong != null || mediaPlayer.status().isPlaying();
     }
 
     /**
@@ -151,12 +155,8 @@ public class OpenALSongManager extends AbstractSongChild {
     @Override
     public CompletableFuture<Song> play(Song song) {
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                setCurrentSong(song);
-    //            playNext(song);
-    //            skip();
-                return currentSong;
-            });
+            setCurrentSong(song);
+            return CompletableFuture.completedFuture(song);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -169,10 +169,8 @@ public class OpenALSongManager extends AbstractSongChild {
     @Override
     public CompletableFuture<Song> pause() {
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                currentSong.getMusic().pause();
-                return currentSong;
-            });
+            mediaPlayer.controls().pause();
+            return CompletableFuture.completedFuture(currentSong);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -184,12 +182,10 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public CompletableFuture<Song> resume() {
-
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                currentSong.getMusic().play();
-                return currentSong;
-            });
+            mediaPlayer.controls().play();
+
+            return CompletableFuture.completedFuture(currentSong);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -202,7 +198,6 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public void playNext(@NonNull Song song) {
-
         super.playNext(song);
     }
 
@@ -256,33 +251,27 @@ public class OpenALSongManager extends AbstractSongChild {
      */
     @Override
     public CompletableFuture<Song> previousSong(int index) {
-
-
         if (index < 1) throw new IllegalArgumentException("Index cannot be less than 1");
         if (getSongHistory().size() < index) throw new IndexOutOfBoundsException("Index " + index + " is larger than song history " + getSongHistory().size());
 
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                if (currentSong != null) {
-                    playNext(currentSong);
-                    currentSong.getMusic().stop();
-                }
+
+            if (currentSong != null) {
+                playNext(currentSong);
+            }
 
 
-                Song song;
+            Song song;
 
-                for (int i = 0; i < index; i++) {
-                    song = getSongHistory().pop();
+            for (int i = 0; i < index; i++) {
+                song = getSongHistory().pop();
 
-                    playNext(song);
-                }
+                playNext(song);
+            }
 
-                skip().get(); // Since play next adds to the top queue, skip to it.
+            skip().get(); // Since play next adds to the top queue, skip to it.
 
-//                setCurrentSong(song);
-
-                return currentSong;
-            });
+            return CompletableFuture.completedFuture(currentSong);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -309,20 +298,6 @@ public class OpenALSongManager extends AbstractSongChild {
     @Override
     public CompletableFuture<Song> skip() {
         return skip(1);
-//        MP3Server.getServer().getPluginManager().callEvent(new SongActionEvent(currentSong, SongAction.SKIP));
-//        if (getSongQueue().isEmpty()) throw new NoSongsException("No songs in queue");
-//
-//        try {
-//            return audioHandler.runOnAudioThread(() -> {
-//                Song song = currentSong;
-//                setCurrentSong(getSongQueue().pop());
-//                getSongHistory().push(song);
-//
-//                return song;
-//            });
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
     }
 
     /**
@@ -339,22 +314,22 @@ public class OpenALSongManager extends AbstractSongChild {
         if (getSongQueue().size() < index) throw new IndexOutOfBoundsException("Index " + index + " is larger than song queue " + getSongQueue().size());
 
         try {
-            return audioHandler.runOnAudioThread(() -> {
-                if (currentSong != null)
-                    currentSong.getMusic().stop();
 
-                for (int i = 0; i < index; i++) {
-                    Song oldSong = currentSong; // Get current song playing
-                    currentSong = getSongQueue().pop(); // Get next song to play and set to play
+            if (currentSong != null)
+                mediaPlayer.controls().stop();
 
-                    if (oldSong != null)
-                        getSongHistory().push(oldSong); // Put old song in history
-                }
+            for (int i = 0; i < index; i++) {
+                Song oldSong = currentSong; // Get current song playing
+                currentSong = getSongQueue().pop(); // Get next song to play and set to play
 
+                if (oldSong != null)
+                    getSongHistory().push(oldSong); // Put old song in history
+            }
+
+            if (currentSong != null)
                 setCurrentSong(currentSong);
 
-                return currentSong;
-            });
+            return CompletableFuture.completedFuture(currentSong);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -411,10 +386,12 @@ public class OpenALSongManager extends AbstractSongChild {
 
         switch (loopMode) {
             case SONG:
-                currentSong.getMusic().setLooping(true);
+                mediaPlayer.controls().setRepeat(true);
+                break;
+            case SONG_ONCE:
                 break;
             case NONE:
-                currentSong.getMusic().setLooping(false);
+                mediaPlayer.controls().setRepeat(false);
                 break;
         }
 
@@ -423,35 +400,25 @@ public class OpenALSongManager extends AbstractSongChild {
 
 
     public void setCurrentSong(@NonNull Song song) {
-        if (currentSong != null)
-            currentSong.getMusic().dispose();
-
         currentSong = song;
-        currentSong.getMusic().setOnCompletionListener(music -> {
-            getSongHistory().push(currentSong);
-            if (loopMode == LoopMode.SONG_ONCE) {
-                loop(LoopMode.NONE);
+        mediaPlayer.media().play(Objects.requireNonNull(song.getFile()).getAbsolutePath());
+
+        mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                getSongHistory().push(currentSong);
+                if (loopMode == LoopMode.SONG_ONCE) {
+                    loop(LoopMode.NONE);
+                    VLCSongManager.this.play(song);
+                    return;
+                }
+
+                if (!getSongQueue().isEmpty())
+                    skip();
+                else
+                    currentSong = null;
             }
-
-            if (!getSongQueue().isEmpty())
-                skip();
-            else
-                currentSong = null;
-
-            music.stop();
-            music.dispose();
         });
-
-        try {
-            audioHandler.runOnAudioThread(() -> {
-                currentSong.getMusic().play();
-                return null;
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
-
-
 
 }

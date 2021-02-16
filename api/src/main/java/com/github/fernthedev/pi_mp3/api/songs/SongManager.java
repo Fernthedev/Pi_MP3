@@ -2,6 +2,7 @@ package com.github.fernthedev.pi_mp3.api.songs;
 
 import com.github.fernthedev.pi_mp3.api.exceptions.song.SongNotFoundException;
 import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
@@ -31,6 +32,33 @@ public interface SongManager {
      */
     @Nullable
     SongManager getParent();
+
+    /**
+     * Gets a copy of the song factories
+     * @return song factories
+     */
+    @NotNull
+    Map<String, SongFactory> getSongFactories();
+
+    /**
+     *
+     * @param name The name of the song factory
+     * @return the song factory
+     *
+     * @throws IllegalArgumentException is thrown if the song manager does not exist
+     */
+    @NonNull
+    SongFactory getSongFactory(@NotNull String name) throws IllegalArgumentException;
+
+    /**
+     * Avoid registering the same song factory with multiple names
+     *
+     * @param name The name of the song factory
+     * @param songFactory The song factory instance
+     *
+     * @throws IllegalArgumentException is thrown if the song manager with the name already exists
+     */
+    void registerSongFactory(@NotNull String name, @NotNull SongFactory songFactory) throws IllegalArgumentException;
 
     /**
      * Returns the unique name of the song manager to identify it.
@@ -128,7 +156,7 @@ public interface SongManager {
 
     /**
      *
-     * @param volume volume of current song
+     * @param volume volume of current song, percent of 0-100. May vary on implementation
      */
     CompletableFuture<Song> setVolume(float volume);
 

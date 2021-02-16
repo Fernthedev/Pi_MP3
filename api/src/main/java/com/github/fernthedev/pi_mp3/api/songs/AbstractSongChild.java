@@ -2,13 +2,48 @@ package com.github.fernthedev.pi_mp3.api.songs;
 
 import com.github.fernthedev.pi_mp3.api.MP3Pi;
 import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
+import java.util.Map;
 
 public abstract class AbstractSongChild implements SongManager {
     protected final LinkedList<@NonNull Song> songHistory = new LinkedList<>();
     protected final LinkedList<@NonNull Song> songQueue = new LinkedList<>();
+
+    /**
+     * Gets a copy of the song factories
+     *
+     * @return song factories
+     */
+    @NotNull
+    @Override
+    public Map<String, SongFactory> getSongFactories() {
+        return parent.getSongFactories();
+    }
+
+    /**
+     * @param name The name of the song factory
+     * @return the song factory
+     * @throws IllegalArgumentException is thrown if the song manager does not exist
+     */
+    @Override
+    public @NonNull SongFactory getSongFactory(@NotNull String name) throws IllegalArgumentException {
+        return parent.getSongFactory(name);
+    }
+
+    /**
+     * Avoid registering the same song factory with multiple names
+     *
+     * @param name        The name of the song factory
+     * @param songFactory The song factory instance
+     * @throws IllegalArgumentException is thrown if the song manager with the name already exists
+     */
+    @Override
+    public void registerSongFactory(@NotNull String name, @NotNull SongFactory songFactory) throws IllegalArgumentException {
+        parent.registerSongFactory(name, songFactory);
+    }
 
     protected Song currentSong;
     protected LoopMode loopMode;
